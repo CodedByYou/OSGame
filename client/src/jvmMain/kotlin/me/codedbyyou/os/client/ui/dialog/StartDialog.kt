@@ -1,6 +1,7 @@
 package me.codedbyyou.os.client.ui.dialog
 
 import com.lehaine.littlekt.Context
+import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.graph.node.Node
 import com.lehaine.littlekt.graph.node.resource.HAlign
 import com.lehaine.littlekt.graph.node.node
@@ -9,11 +10,14 @@ import com.lehaine.littlekt.util.signal
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
+import kotlin.reflect.KClass
 
 
-fun Node.startDialog(callback: StartDialog.() -> Unit) = node(StartDialog(), callback)
+fun Node.startDialog( onSelection: suspend (KClass<out Scene>) -> Unit, callback: StartDialog.() -> Unit) = node(StartDialog(onSelection), callback)
 
-class StartDialog : CenterContainer() {
+class StartDialog(
+    private val onSelection: suspend (KClass<out Scene>) -> Unit,
+) : CenterContainer() {
     val size       = Config.VSIZE()
     val onServers  = signal()
     val onSettings = signal()
@@ -22,7 +26,7 @@ class StartDialog : CenterContainer() {
         anchorRight = 1f;
         anchorBottom = 1f
         onServers.plusAssign {
-            this.parent?.serverDialog(size.first, size.second) {
+            this.parent?.serverDialog(onSelection, size.first, size.second) {
                 this@StartDialog.visible = false
                 this.onBack.plusAssign {
                     this@StartDialog.parent?.removeChild(this)

@@ -2,6 +2,7 @@ package me.codedbyyou.os.client.ui
 
 import com.lehaine.littlekt.Context
 import com.lehaine.littlekt.ContextListener
+import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.file.vfs.readTexture
 import com.lehaine.littlekt.graph.SceneGraph
 import com.lehaine.littlekt.graph.node.node
@@ -21,10 +22,12 @@ import com.lehaine.littlekt.util.viewport.ExtendViewport
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.dialog.startDialog
+import kotlin.time.Duration
 
 /**
  * @author Colton Daily
  * @date 10/26/2022
+ * used as reference for the UI
  */
 class UiPlayground(context: Context) : ContextListener(context) {
 
@@ -544,35 +547,6 @@ class UiPlayground(context: Context) : ContextListener(context) {
             if (input.isKeyJustPressed(Key.ESCAPE)) {
                 close()
             }
-        }
-    }
-}
-
-class ServerChoosal(context: Context) : ContextListener(context) {
-    override suspend fun Context.start() {
-        val VSIZE = Config.VSIZE()
-        fun SceneGraph<String>.initNodes(){
-            viewport {
-                viewport = ExtendViewport(VSIZE.first.toInt(), VSIZE.second.toInt())
-                this.startDialog() {}
-            }
-        }
-        val graph = sceneGraph(context) {
-            Assets.music.play(Config.musicMultiplier, true)
-            initNodes()
-        }.also { it.initialize() }
-
-        onResize { newWidth, newHeight ->
-            graph.resize(newWidth, newHeight, true)
-            graph.viewport{}.apply { context }
-        }
-        onRender { dt ->
-            gl.clear(ClearBufferMask.COLOR_BUFFER_BIT)
-
-            graph.update(dt)
-            graph.render()
-
-            graph.viewport{}.apply { context }
         }
     }
 }

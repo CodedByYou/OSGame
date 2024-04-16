@@ -1,7 +1,8 @@
 package me.codedbyyou.os.server.player
 
 import me.codedbyyou.os.core.interfaces.player.Player
-import me.codedbyyou.os.core.interfaces.server.PacketPrefix
+import me.codedbyyou.os.core.interfaces.server.Packet
+import me.codedbyyou.os.core.interfaces.server.PacketType
 import java.util.concurrent.ConcurrentLinkedQueue
 
 
@@ -15,26 +16,28 @@ class GamePlayer(
     override val isPlayerOp: Boolean,
     override val isPlayerWhitelisted: Boolean,
     override val ip: String,
-    private val dataProcessor : (String) -> Unit
+    override val macAddress: String,
+    private val dataProcessor : (Packet) -> Unit
 ) : Player {
 
-    private val dataBuffer = ConcurrentLinkedQueue<String>()
+    private val dataBuffer = ConcurrentLinkedQueue<Packet>()
     override fun sendMessage(message: String) {
-        dataBuffer.add("[${PacketPrefix.MESSAGE}]$message")
+        dataBuffer
+            .add(Packet(PacketType.MESSAGE, mapOf("message" to message)))
     }
 
     override fun sendTitle(title: String, subtitle: String) {
-        dataBuffer.add("[${PacketPrefix.TITLE}]$title, $subtitle")
+        dataBuffer.add(Packet(PacketType.TITLE, mapOf("title" to title, "subtitle" to subtitle)))
         println("Title sent to $pseudoName: $title, $subtitle")
     }
 
     override fun sendActionBar(message: String) {
-        dataBuffer.add("[${PacketPrefix.ACTION_BAR}]$message")
+        dataBuffer.add(Packet(PacketType.ACTION_BAR, mapOf("message" to message)))
         println("Action bar sent to $pseudoName: $message")
     }
 
     override fun kick(reason: String) {
-        dataBuffer.add("[${PacketPrefix.KICK}]$reason")
+        dataBuffer.add(Packet(PacketType.KICK, mapOf("reason" to reason)))
         println("Player $pseudoName has been kicked for $reason")
     }
 

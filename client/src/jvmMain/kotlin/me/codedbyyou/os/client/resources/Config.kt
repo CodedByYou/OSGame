@@ -15,55 +15,87 @@ object Config {
     private val userHomeDirectory = System.getProperty("user.home")
     private val config = YamlDocument.create(File(userHomeDirectory,"/.osgame/config.yml"))
     private val _servers = mutableListOf<Server>()
+
     val servers: List<Server>
         get() = _servers
     init {
 
         if (!config.contains("ip")) {
             config["ip"] = mapOf(
-                "0" to mapOf(
-                    "ip" to "ssh.codedbyyou.com",
-                    "port" to 13337
+                "ssh+codedbyyou+com" to mapOf(
+                    "13337" to mapOf<String, Any>(
+                        "addition_date" to System.currentTimeMillis(),
+                    )
                 )
             )
-            println("Nothing is in here whaaat?")
             config.save()
         }
 
        val ipSection = config.getSection("ip")
         for (i in ipSection.keys) {
+            println(i.toString())
+
             val ip = ipSection.getSection(i.toString())
-            println("IP: ${ip["ip"]}, Port: ${ip["port"]}")
-            _servers.add(Server(
-                ip=ip["ip"] as String,
-                port=ip.getInt("port"),
-                psuedoName = ip.getOptionalString("user").getOrNull(),
-                ticket = ip.getOptionalString("ticket").getOrNull()
-            ))
+            for (p in ip.keys) {
+                val port = ip.getSection(p.toString())
+                val server = Server(
+                    ip= ip.name.toString().replace("+", "."),
+                    port = p.toString().toInt(),
+                    psuedoName = port.getOptionalString("user").getOrNull(),
+                    ticket = port.getOptionalString("ticket").getOrNull()
+                )
+                _servers.add(server)
+            }
         }
 
     }
 
-    fun addServer(server: Server){
+    fun upsertServer(server: Server){
+        if (_servers.contains(server)) {
+            _servers.remove(server)
+            _servers.add(server)
+        }
         val ipSection = config.getSection("ip")
-        val index = ipSection.keys.size
-        ipSection[index.toString()] = mapOf(
-            "ip" to server.ip,
-            "port" to server.port
-        )
+        val data = mutableMapOf<String, String>()
+        val serverIP = server.ip.replace(".", "+")
+        if (ipSection.keys.contains(serverIP)) {
+            val ip = ipSection.getSection(serverIP)
+            if (ip.keys.contains(server.port.toString())) {
+                val port = ip.getSection(server.port.toString())
+                if (server.psuedoName != null) {
+                    port["user"] = server.psuedoName
+                    port["ticket"] = server.ticket
+                }
+                port["addition_date"] = System.currentTimeMillis()
+            } else {
+                if (server.psuedoName != null) {
+                    data["user"] = server.psuedoName!!
+                    data["ticket"] = server.ticket!!
+                }
+                data["addition_date"] = System.currentTimeMillis().toString()
+                ip[server.port.toString()] = data
+            }
+        } else {
+            if (server.psuedoName != null) {
+                data["user"] = server.psuedoName!!
+                data["ticket"] = server.ticket!!
+            }
+            data["addition_date"] = System.currentTimeMillis().toString()
+            ipSection[serverIP] = mapOf(
+               server.port to data
+            )
+        }
         config.save()
         _servers.add(server)
     }
 
     fun removeServer(server: Server){
+        _servers.remove(server)
         val ipSection = config.getSection("ip")
-        for (i in ipSection.keys) {
-            val ip = ipSection.getSection(i.toString())
-            if (ip["ip"] == server.ip && ip.getInt("port") == server.port) {
-                ipSection.remove(i.toString())
-                config.save()
-                _servers.remove(server)
-                break
+        if (ipSection.keys.contains(server.ip)) {
+            val ip = ipSection.getSection(server.ip)
+            if (ip.keys.contains(server.port.toString())) {
+                ip.remove(server.port.toString())
             }
         }
     }
@@ -76,8 +108,8 @@ object Config {
     }
 
 
-    val soundAdjustStepRate = 0.01f;
-    var musicMultiplier = 1f
+    val soundAdjustStepRate = 0.1f;
+    var musicMultiplier = 0.1f
         set(value) {
             val prev = field
             field = max(0f, min(value, 1f))

@@ -11,19 +11,13 @@ import me.codedbyyou.os.server.events.interfaces.Cancellable
  * @since 1.0
  * Date: 9/11/2022
  */
-abstract class CancellableEvent : Event(), Cancellable {
+abstract class CancellableEvent(name: String) : Event(name), Cancellable {
 
-    override fun getName(): String {
-        return this.javaClass.simpleName
-    }
+    override var isCancelled: Boolean = false
+        set(value) {
+            // REDUNDANT IN THIS CASE BUT
+            // ADD SOME LOGIC HERE WHEN OVERRIDING
+            field = value
+        }
 
-    private var cancelled = false
-
-    override fun setCancelled(cancelled: Boolean) {
-        this.cancelled = cancelled
-    }
-
-    override fun isCancelled(): Boolean {
-        return cancelled
-    }
 }

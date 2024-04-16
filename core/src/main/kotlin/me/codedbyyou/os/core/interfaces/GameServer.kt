@@ -1,9 +1,18 @@
 package me.codedbyyou.os.core.interfaces
 
+import dev.dejvokep.boostedyaml.YamlDocument
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.ServerStatus
+import java.io.File
 
-interface OSGameServer {
+
+
+
+interface GameServer {
+
+    val isFirstRun: Boolean
+    val workingDirectory: File;
+    val config: YamlDocument;
 
     fun start()
 

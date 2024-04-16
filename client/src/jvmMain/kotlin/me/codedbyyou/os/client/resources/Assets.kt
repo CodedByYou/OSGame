@@ -6,6 +6,7 @@ import com.lehaine.littlekt.Context
 import com.lehaine.littlekt.Disposable
 import com.lehaine.littlekt.audio.AudioClip
 import com.lehaine.littlekt.audio.AudioStream
+import com.lehaine.littlekt.file.vfs.readTtfFont
 import com.lehaine.littlekt.graph.node.resource.NinePatchDrawable
 import com.lehaine.littlekt.graph.node.resource.Theme
 import com.lehaine.littlekt.graph.node.resource.createDefaultTheme
@@ -15,8 +16,12 @@ import com.lehaine.littlekt.graph.node.ui.Panel
 import com.lehaine.littlekt.graph.node.ui.ProgressBar
 import com.lehaine.littlekt.graphics.Color
 import com.lehaine.littlekt.graphics.Fonts
+import com.lehaine.littlekt.graphics.Texture
 import com.lehaine.littlekt.graphics.g2d.*
 import com.lehaine.littlekt.graphics.g2d.font.BitmapFont
+import com.lehaine.littlekt.graphics.g2d.font.TtfFont
+import com.lehaine.littlekt.graphics.g2d.font.VectorFont
+import com.lehaine.littlekt.graphics.slice
 import com.lehaine.littlekt.util.fastForEach
 import kotlin.jvm.Volatile
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,10 +32,16 @@ class Assets private constructor(context: Context) : Disposable {
     private val levelUp by assets.prepare { atlas.getAnimation("levelUp") }
 
     private var theme: Theme? = null
+
     private val sfxCollect: AudioClip by assets.load(context.resourcesVfs["sfx/collect0.wav"])
     private val sfxSelect: AudioClip by assets.load(context.resourcesVfs["sfx/minecraft_click.wav"])
     private val sfxWarning: AudioClip by assets.load(context.resourcesVfs["sfx/warning0.wav"])
     private val music: AudioStream by assets.load(context.resourcesVfs["sfx/c418_mc_music.wav"])
+    private val font: TtfFont by assets.load(context.resourcesVfs["display1.ttf"])
+    private val bitmapFont: BitmapFont by assets.load(context.resourcesVfs["display.fnt"], BitmapFontAssetParameter())
+    private val vectorFont: VectorFont by lazy { VectorFont(font).also { it.prepare(context) }}
+
+//    private val background : Texture by assets.load(context.resourcesVfs["bg.png"])
 
     init {
         assets.prepare {
@@ -39,11 +50,12 @@ class Assets private constructor(context: Context) : Disposable {
             val panel9p = NinePatch(atlas.getByPrefix("uiPanel").slice, 15, 15, 15, 1)
             val outline9p = NinePatch(atlas.getByPrefix("uiOutline").slice, 1, 1, 1, 1)
             val pixel9p = NinePatch(atlas.getByPrefix("fxPixel").slice, 0, 0, 0, 0)
-
             theme = createDefaultTheme(
                 extraDrawables = mapOf(
                     "Button" to mapOf(
-                        Button.themeVars.normal to NinePatchDrawable(button9p),
+                        Button.themeVars.normal to NinePatchDrawable(button9p).apply {
+                            modulate = Color.RED.toMutableColor().scaleRgb(1f)
+                        },
                         Button.themeVars.pressed to NinePatchDrawable(button9p).apply {
                             modulate = Color.WHITE.toMutableColor().scaleRgb(0.6f)
                         },
@@ -83,7 +95,6 @@ class Assets private constructor(context: Context) : Disposable {
         }
     }
 
-
     override fun dispose() {
         atlas.dispose()
         sfxCollect.dispose()
@@ -104,8 +115,10 @@ class Assets private constructor(context: Context) : Disposable {
 
         val sfxSelect get() = INSTANCE.sfxSelect
         val sfxWarning get() = INSTANCE.sfxWarning
+        val vectorFont get() = INSTANCE.vectorFont
+        val bitmapFont get() = INSTANCE.bitmapFont
+        val theme get() = INSTANCE.theme
 
-        val theme get() = INSTANCE.theme;
         val music get() = INSTANCE.music
 
         fun createInstance(context: Context, onLoad: () -> Unit): Assets {
@@ -113,6 +126,7 @@ class Assets private constructor(context: Context) : Disposable {
             val newInstance = Assets(context)
             instance = newInstance
             INSTANCE.assets.onFullyLoaded = onLoad
+
             context.onRender { INSTANCE.assets.update() }
             return newInstance
         }

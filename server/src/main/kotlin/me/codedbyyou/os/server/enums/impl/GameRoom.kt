@@ -35,7 +35,7 @@ class GameRoom(
     override val roomVersion: String,
     override val roomMaxPlayers: Int,
     override val roomMinPlayers: Int,
-    override val roomPlayers: List<Player>,
+    override val roomPlayers: MutableList<Player>,
     override var roomPlayerCount: Int
 ) : Game {
 
@@ -44,6 +44,21 @@ class GameRoom(
     override val spectators:    MutableList<Player> = mutableListOf()
     private  var currentRound   = 0
     private  val currentGuesses = mutableMapOf<Player, Int>()
+
+    fun isFull(): Boolean {
+        return roomPlayerCount == roomMaxPlayers
+    }
+
+    fun turnToSpectator(player: Player) {
+        roomPlayers.remove(player)
+        spectators.add(player)
+    }
+
+    fun addPlayer(player: Player) {
+        roomPlayers.add(player)
+        roomPlayerCount++
+    }
+
 
     override suspend fun start() {
         coroutineScope {

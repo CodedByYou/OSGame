@@ -11,11 +11,12 @@ import me.codedbyyou.os.server.events.interfaces.Cancellable
  */
 abstract class Event {
 
-    /**
-     * @return the name of the event
-     */
-    open fun getName() : String {
-        return this.javaClass.simpleName
+    val name : String
+
+    protected constructor(
+        name: String
+    ){
+        this.name = name
     }
 
     /**

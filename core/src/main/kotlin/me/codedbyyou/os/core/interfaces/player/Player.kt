@@ -2,6 +2,7 @@ package me.codedbyyou.os.core.interfaces.player
 
 interface Player {
 
+    val macAddress: String;
     val pseudoName : String
     val ticket : String
     val isOnline : Boolean

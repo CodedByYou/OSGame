@@ -1,10 +1,10 @@
 package me.codedbyyou.os.server
 
-import dev.dejvokep.boostedyaml.YamlDocument
-import me.codedbyyou.os.core.interfaces.OSGameServer
+import me.codedbyyou.os.core.interfaces.impl.OSGameServer
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.ServerStatus
 import me.codedbyyou.os.server.events.manager.EventManager
+import me.codedbyyou.os.server.managers.GameRoomManager
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import me.codedbyyou.os.server.player.GamePlayerClientHandler
 import java.io.File
@@ -15,16 +15,14 @@ import java.util.logging.Logger
 import kotlin.system.exitProcess
 
 
-object Server : OSGameServer {
-
-    val workingDirectory = File(getCurrentWorkingDirectory())
+object Server : OSGameServer() {
     private var doesConfigExist = File(workingDirectory, "config.yml").exists()
-    var config = YamlDocument.create(File(workingDirectory, "config.yml"), this::class.java.classLoader.getResourceAsStream("config.yml"))
-
+    
     private var status: ServerStatus = ServerStatus.STARTING
     private var socketServer: ServerSocket? = null
     private val threadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
 
+    val gameManager = GameRoomManager()
     val eventsManager = EventManager()
     val logger = Logger.getLogger(Server::class.java.name)
 
@@ -32,9 +30,7 @@ object Server : OSGameServer {
     init {
         status = ServerStatus.STARTING
         logger.info("Server initialized")
-        if (doesConfigExist) {
-            logger.info("Config file already exists")
-        } else {
+        if (isFirstRun) {
             logger.info("Config file created")
             logger.info("Please fill the config file with the server information and restart the server.")
             exitProcess(0)
@@ -47,22 +43,28 @@ object Server : OSGameServer {
             while (true) {
                 try {
                     val socket = socketServer!!.accept()
-                    println("Client connected from ${socket.inetAddress.hostAddress}")
+                    logger.info("Client connected from ${socket.inetAddress.hostAddress}")
                     connectedIPs.add(socket.inetAddress.hostAddress)
                     threadExecutorPool.submit(GamePlayerClientHandler(socket))
                 } catch (e: Exception) {
                     connectedIPs.remove(socketServer!!.inetAddress.hostAddress)
-
                     logger.severe("Failed to accept connection")
                 }
             }
         }
 
         Executors.newSingleThreadExecutor().submit {
-            println("Type 'stop' to stop the server")
+            logger.info("Type 'stop' to stop the server")
             val scanner = Scanner(System.`in`)
             while (true) {
-                val command = scanner.nextLine()
+                val commandData = scanner.nextLine().split(" ")
+                val command = commandData[0]
+                val args = commandData.subList(1, commandData.size)
+
+                if (command == "broadcast"){
+                    broadcast(args.joinToString(" "))
+                }
+
                 if (command == "stop") {
                     stop()
                     break
@@ -70,6 +72,18 @@ object Server : OSGameServer {
             }
         }
     }
+    
+    fun loadPlayerProfiles() {
+        val playersSection = config.getSection("players")
+        playersSection.keys.forEach { key ->
+            val macAddress = key.toString()
+            val nickTicket = playersSection.getString(macAddress)
+            val nickname = nickTicket.split("#")[0]
+            val ticket = nickTicket.split("#")[1]
+            PlayerManager.loadPlayer(nickname, ticket, macAddress)
+        }
+    }
+    
     override val serverName: String
         get() = config.getString("server.name")
     override val serverIP: String
@@ -89,6 +103,7 @@ object Server : OSGameServer {
         logger.info("Server started listening on $serverIP port $serverPort")
         status = ServerStatus.ONLINE
     }
+
 
 
     override fun getOnlinePlayers(): List<Player> {

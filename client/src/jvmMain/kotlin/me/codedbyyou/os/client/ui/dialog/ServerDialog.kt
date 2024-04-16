@@ -1,5 +1,6 @@
 package me.codedbyyou.os.client.ui.dialog
 
+import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.async.KT
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
@@ -14,13 +15,25 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.codedbyyou.os.client.game.Game
+import me.codedbyyou.os.client.game.enums.GameState
+import me.codedbyyou.os.client.game.manager.ConnectionManager
+import me.codedbyyou.os.client.game.runtime.client.Client
+import me.codedbyyou.os.client.game.runtime.client.User
+import me.codedbyyou.os.client.game.scenes.LoginScene
+import me.codedbyyou.os.client.game.scenes.ServerMenuJoinScene
 import me.codedbyyou.os.client.ping
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
+import me.codedbyyou.os.core.interfaces.server.Packet
+import me.codedbyyou.os.core.interfaces.server.PacketType
+import java.util.logging.Logger
+import kotlin.reflect.KClass
 
-fun Node.serverDialog(width : Float, height : Float, callback: ServerDialog.() -> Unit = {}, ) = node(ServerDialog(width, height), callback)
+fun Node.serverDialog(onSelection: suspend (KClass<out Scene>) -> Unit, width : Float, height : Float, callback: ServerDialog.() -> Unit = {}, )
+= node(ServerDialog(onSelection, width, height), callback)
 
-class ServerDialog(dialogWidth: Float, dialogHeight: Float) : CenterContainer() {
+class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit, dialogWidth: Float, dialogHeight: Float) : CenterContainer() {
+    private val logger = Logger.getLogger("ServerDialog")
     val onBack = signal()
     val onRefresh = signal()
     val onAddServer = signal()
@@ -33,7 +46,60 @@ class ServerDialog(dialogWidth: Float, dialogHeight: Float) : CenterContainer() 
         val executor = newSingleThreadAsyncContext()
         anchor(layout = AnchorLayout.CENTER)
         onServerConnect.plusAssign {
-            println("Connecting to server: $chosenServer")
+            logger.info("Connecting to server: $chosenServer")
+            KtScope.launch {
+                val status = Client.connectionManager
+                    .connectTo(chosenServer!!)
+                logger.info("Status: $status")
+                if (status == ConnectionManager.ConnectionStatus.ALREADY_CONNECTED)
+                    return@launch
+                logger.info("Status: $status")
+                if (chosenServer!!.psuedoName != null) {
+                    logger.info("Sending server auth packet")
+                    Client.connectionManager.sendPacket(
+                        Packet(
+                            PacketType.SERVER_AUTH,
+                            mapOf(
+                                "nickTicket" to chosenServer!!.psuedoName + "#" + chosenServer!!.ticket,
+                                "macAddress" to Client.macAddress
+                            )
+                        )
+                    )
+                    logger.info("Sent server auth packet")
+                    val packet: Packet = Client.connectionManager.channel.receive()
+                    logger.info("Received packet: $packet")
+                    if (packet.packetType == PacketType.SERVER_AUTH_SUCCESS) {
+                        Client.user =
+                            User(
+                                chosenServer!!.psuedoName!!,
+                                chosenServer!!.ticket!!
+                            )
+                        onSelection(LoginScene::class)
+                        return@launch
+                    }
+
+                }
+                logger.info("Hello")
+                    onSelection(ServerMenuJoinScene::class)
+            }
+        }
+        onEditServer += {
+
+            logger.info("Sending message to server")
+            Client.connectionManager.sendPacket(
+                Packet(
+                    PacketType.MESSAGE,
+                    mapOf("message" to "Hello from client just clicked on edit!")
+                )
+            )
+
+            KtScope.launch {
+                withContext(newSingleThreadAsyncContext()) {
+                    val packet = Client.connectionManager.channel.receive()
+                    logger.info("Received message from server ${packet.packetData}")
+                }
+            }
+
         }
         onRefresh += {
             println("Refreshing server list")
@@ -44,7 +110,8 @@ class ServerDialog(dialogWidth: Float, dialogHeight: Float) : CenterContainer() 
                         server.ping()
                         serverListColumn?.renderServer(server, onEditServer, onServerConnect) {
                             chosenServer = it
-                         }
+                        }
+
                     }
                 }
             }
@@ -189,7 +256,11 @@ data class Server(var name: String? = null,
                   var description: String?=null,
                   var status: String?=null,
                   var maxPlayers: Int?=null,
-                  var onlinePlayers: Int?=null)
+                  var onlinePlayers: Int?=null){
+    override fun equals(other: Any?): Boolean {
+        return ip == (other as Server).ip && port == other.port
+    }
+}
 
 
 fun Node.renderServer( server: Server, onEditServer: Signal, onServerConnect: Signal, onChooseServer : (server: Server) -> Unit) {
@@ -255,9 +326,10 @@ fun Node.renderServer( server: Server, onEditServer: Signal, onServerConnect: Si
                 text = "Connect"
                 fontColor = Color.CYAN
                 onPressed += {
+                    onChooseServer(server)
                     // Emit the server data when the "Connect" button is clicked
                     onServerConnect.emit()
-                    onChooseServer(server)
+
                 }
             }
 

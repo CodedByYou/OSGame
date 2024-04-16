@@ -21,7 +21,7 @@ class SettingsDialog : CenterContainer() {
     init {
         anchorRight = 1f
         anchorBottom = 1f
-
+        name = "SettingsDialog"
         panelContainer {
             paddedContainer {
                 padding(10)

@@ -16,7 +16,7 @@ interface Game {
     val roomVersion : String
     val roomMaxPlayers : Int
     val roomMinPlayers : Int
-    val roomPlayers : List<Player>
+    val roomPlayers : MutableList<Player>
     var roomPlayerCount : Int
     val roundResults : MutableMap<Player, MutableList<Int>>
     val roundWinners : MutableList<Player>

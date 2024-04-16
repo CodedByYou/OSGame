@@ -1,8 +1,6 @@
 import com.lehaine.littlekt.gradle.texturepacker.littleKt
-import com.lehaine.littlekt.gradle.texturepacker.packing
 import com.lehaine.littlekt.gradle.texturepacker.texturePacker
 import org.gradle.kotlin.dsl.version
-import org.jetbrains.kotlin.gradle.model.*
 
 buildscript {
     val littleKtVersion = "0.9.0" // or whichever hash you are using
