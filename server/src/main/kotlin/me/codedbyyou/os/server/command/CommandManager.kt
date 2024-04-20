@@ -119,9 +119,7 @@ object CommandManager {
 
         for ((path, commandHolder, subCommand) in subCommands) {
             var currentCommandHolder = command[path[0]]!!
-            println("Found subcommand ${subCommand.name} for command ${currentCommandHolder.name}")
             for (subCommand in path.subList(1,path.size)) {
-                println("Entering subcommand $subCommand for command ${currentCommandHolder.name}")
                 val commandHolder = currentCommandHolder.subCommandHolder.find { it.name == subCommand }
                 if (commandHolder == null) {
                     logger.warning("Subcommand $subCommand for command ${currentCommandHolder.name} not found.")
