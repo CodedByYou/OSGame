@@ -1,7 +1,6 @@
 package me.codedbyyou.os.server.managers
 
-import me.codedbyyou.os.core.interfaces.player.Player
-import me.codedbyyou.os.server.enums.RoomStatus
+import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.server.enums.impl.GameRoom
 
 class GameRoomManager {
@@ -11,6 +10,10 @@ class GameRoomManager {
     private var roomId = 0
 
     private val rooms: MutableMap<Int, GameRoom> = mutableMapOf()
+
+    init{
+        addRoom("Default Room", "Default Room Description", 3, "1.0", 10, 2, 0)
+    }
 
     fun addRoom(
         roomName: String,

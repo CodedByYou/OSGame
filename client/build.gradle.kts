@@ -21,6 +21,7 @@ buildscript {
 plugins {
     kotlin("multiplatform")
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("plugin.serialization") version "1.9.23" apply false
     id("com.lehaine.littlekt.gradle.texturepacker") version "0.9.0"
     application
 }
@@ -65,6 +66,7 @@ kotlin {
                 implementation(project(":core"))
                 implementation(kotlin("stdlib-jdk8"))
                 implementation("dev.dejvokep:boosted-yaml:1.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
             }
         }

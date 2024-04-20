@@ -28,7 +28,6 @@ fun main(args: Array<String>) {
             hdpiMode = HdpiMode.PIXELS
         }
     }.start {context ->
-
         Game(context)
     }
 
@@ -38,6 +37,7 @@ fun Server.ping(){
     val logger = Logger.getLogger("ConnectionHandler")
     try {
         val socket = Socket(this.ip, this.port)
+        socket.soTimeout = 1500
         val input = socket.getInputStream()
         val output = socket.getOutputStream()
         logger.info("Connected to server "+ this.ip)
@@ -62,6 +62,6 @@ fun Server.ping(){
         this.onlinePlayers = packetData["Online Players"]?.toString()?.toInt() ?: 0
         socket.close()
     } catch (e: Exception) {
-        logger.warning("Failed to connect to server ${this.ip}")
+        logger.warning("Failed to ping server ${this.ip}")
     }
 }

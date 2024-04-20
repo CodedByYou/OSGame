@@ -1,5 +1,8 @@
 package me.codedbyyou.os.server.player
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.sendPacket
@@ -10,7 +13,13 @@ import me.codedbyyou.os.server.player.manager.PlayerManager
 import java.io.OutputStream
 import java.net.Socket
 import me.codedbyyou.os.core.interfaces.server.PacketType.*
+import me.codedbyyou.os.core.models.GameRoomInfo
+import me.codedbyyou.os.core.models.serialized
+import me.codedbyyou.os.server.command.CommandManager
+import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
+import java.util.concurrent.Executors
+import kotlin.math.log
 
 class GamePlayerClientHandler(val socket: Socket) : Runnable {
     private val logger = Server.logger
@@ -19,9 +28,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
     private var player: Player? = null
     private var gameRoomID: Int = -1
 
-    init {
-
-    }
+    private val TEMP_ROOM_CMD_USAGE = "[Usage] room create <roomName> <maxPlayers> <rounds> <optional: description>"
     override fun run() {
         /**
          * task is to double-check packet processing and handling (data variable is the packet data)
@@ -32,6 +39,8 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
             val output = socket.getOutputStream()
             val buffer = ByteArray(1024)
             var read : Int
+            // To know where cpu is being used most in the code, i need to use a profiler, such as visualvm
+            // This note is for later
             while (input.read(buffer).also { read = it } != -1) {
                 val data = String(buffer, 0, read)
                 val packet = Packet.fromPacket(data)
@@ -57,11 +66,38 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             .sendPacket(output)
                     }
                     MESSAGE -> {
-                        val message = packetData["message"]
+                        val message = packetData["message"].toString()
                         logger.info("Message received from ${socket.inetAddress.hostAddress} $nickname: $message")
+                        if (!message.startsWith("/"))
+                            return
+
+                        var args = message.replaceFirst("/","").split(" ").toMutableList()
+                        val command = args[0]
+                        args = args.subList(1, args.size)
+
+                        for (i in args.indices){
+                            if (args[i].startsWith("\"")){
+                                var j = i
+                                while (j < args.size && !args[j].endsWith("\"")){
+                                    j++
+                                }
+                                args[i] = args.subList(i, j+1).joinToString(" ")
+                                args = (args.subList(0, i) + args.subList(j+1, args.size)).toMutableList()
+                            }
+                        }
+
+                        logger.info("Command: $command Args: ${args.joinToString(" ")}")
+                        CommandManager.executeCommand(player as GamePlayer, command, args)
+
+                        if (command == "broadcast") {
+                            // reached here
+                            logger.info("Broadcasting message to all players")
+                            Server.broadcast("[Server] " + args.joinToString(" "))
+                        }
+
                     }
                     CLIENT_INFO -> {
-//                        send back client info, if is authenticated and if is authorized send back the player info
+                        // send back client info, if is authenticated and if is authorized send back the player info
                         // basic logic for now
                         if (player != null){
                             CLIENT_INFO
@@ -123,7 +159,18 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                     GAME_PLAYER_GUESS -> TODO()
                     GAME_PLAYER_WIN -> TODO()
                     GAME_PLAYER_LOSE -> TODO()
-                    GAMES_LIST -> TODO()
+                    GAMES_LIST -> {
+                        logger.info("Preparing game list")
+                        val games = Server.gameManager.getRooms()
+                            .map { it.toGameRoomInfo() }
+                        GAMES_LIST
+                            .toPacket(
+                                mapOf(
+                                    "games" to games.serialized()
+                                )
+                            ).sendPacket(output)
+                        logger.info("Sent Game List")
+                    }
                     GAME_CREATE -> TODO()
                     GAME_JOIN -> TODO()
                     GAME_LEAVE -> TODO()
@@ -136,13 +183,13 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                     SERVER_AUTH -> {
                         val nickTicket = packetData["nickTicket"] as String
                         val macAddress = packetData["macAddress"] as String
-                        val result = PlayerManager.connect(nickTicket,
-                            socket.inetAddress.hostAddress.toString(),
-                            macAddress
-                            ){
-                            it.sendPacket(output)
-                        }
-                        if (result){
+                        if (PlayerManager.doAuth(nickTicket, macAddress)){
+                            player = PlayerManager.connect(
+                                nickTicket,
+                                socket.inetAddress.hostAddress.toString(),
+                                macAddress,
+                                output
+                            )
                             SERVER_AUTH_SUCCESS.sendPacket(output)
                         } else {
                             SERVER_AUTH_FAIL.sendPacket(output)
@@ -150,45 +197,44 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                     }
                     SERVER_REGISTER -> {
                         /**
-                         * 4. Server Registration packets
-                         * what would be the best way to handle registration with tickets for usernames?
                          * 1. Client sends a psuedo-name, and mac address to the server
                          * 2. Server generates a ticket and sends it back to the client with a success packet
                          * 2.a Server authenticates the client with the ticket at the same time
                          * 3. communication is now secure and known on server side
                          */
-//                        val message = data.substring(data.indexOf("]") + 1)
-//                        val pseudoName = message.substring(0, message.indexOf(" "))
-//                        val macAddress = message.substring(message.indexOf(" ") + 1)
                         val pseudoName = packetData["pseudoName"] as String
                         val macAddress = packetData["machineId"] as String
                         logger.info("Registering player $pseudoName with mac address $macAddress")
                         try {
                             val ticket = PlayerManager.registerPlayer(
                                 pseudoName, macAddress,
-                                socket.inetAddress.hostAddress.toString()
-                            ) {
-                                it.sendPacket(output)
-                            }
+                                socket.inetAddress.hostAddress.toString(),
+                                output
+                            )
+
                             player = PlayerManager.getPlayer("$pseudoName#$ticket")
+                            println("Player: $player")
                             logger.info("Sending Packet: $SERVER_REGISTER_SUCCESS")
                             Packet(SERVER_REGISTER_SUCCESS, mapOf("ticket" to ticket))
                                 .sendPacket(output)
-
                             logger.info("Connection still open: ${socket.isConnected}")
                             logger.info("Sent Packet: $SERVER_REGISTER_SUCCESS")
                         } catch (e: TicketOutOfBoundsException) {
+                            /**
+                             * Psuedo name with tickets from 0 to 9999 are already taken
+                             */
                             SERVER_REGISTER_FAIL.sendPacket(output)
                         }
                     }
                     else -> output.noSuchPacketOnServer()
 
                 }
+
             }
         }
-        println("Client disconnected from ${socket.inetAddress.hostAddress}") // this will never be reached
-
+        logger.info("Client disconnected from ${socket.inetAddress.hostAddress}") // this will never be reached
     }
+
     private fun OutputStream.noSuchPacketOnServer(){
         NO_SUCH_PACKET.sendPacket(this)
     }

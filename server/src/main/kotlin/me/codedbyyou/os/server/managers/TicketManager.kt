@@ -2,6 +2,13 @@ package me.codedbyyou.os.server.managers
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
 import me.codedbyyou.os.server.player.manager.PlayerManager
 
+/**
+ * TicketManager.kt
+ * Generates and validates tickets for players
+ * @author Abdollah Kandrani
+ * @since 1.0.0
+ * @see PlayerManager
+ */
 object TicketManager {
 
     @Throws(TicketOutOfBoundsException::class)

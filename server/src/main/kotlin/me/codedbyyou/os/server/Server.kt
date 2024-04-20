@@ -3,11 +3,11 @@ package me.codedbyyou.os.server
 import me.codedbyyou.os.core.interfaces.impl.OSGameServer
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.ServerStatus
+import me.codedbyyou.os.server.command.CommandManager
 import me.codedbyyou.os.server.events.manager.EventManager
 import me.codedbyyou.os.server.managers.GameRoomManager
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import me.codedbyyou.os.server.player.GamePlayerClientHandler
-import java.io.File
 import java.net.ServerSocket
 import java.util.Scanner
 import java.util.concurrent.Executors
@@ -15,12 +15,25 @@ import java.util.logging.Logger
 import kotlin.system.exitProcess
 
 
+/**
+ * Main Core of the server
+ * implements OSGameServer interface to provide the server with the necessary methods
+ * to manage the server
+ * @see OSGameServer
+ * @author Abdollah Kandrani
+ * @since 1.0.0
+ * @version 1.0.0
+ * @property status the status of the server
+ * @property socketServer the server socket
+ * @property playerThreadExecutorPool the thread pool for the players
+ * @property gameManager the game manager
+ * @property eventsManager the events manager
+ */
 object Server : OSGameServer() {
-    private var doesConfigExist = File(workingDirectory, "config.yml").exists()
-    
+
     private var status: ServerStatus = ServerStatus.STARTING
     private var socketServer: ServerSocket? = null
-    private val threadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
+    private val playerThreadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
 
     val gameManager = GameRoomManager()
     val eventsManager = EventManager()
@@ -28,24 +41,26 @@ object Server : OSGameServer() {
 
 
     init {
+        CommandManager
         status = ServerStatus.STARTING
-        logger.info("Server initialized")
+
         if (isFirstRun) {
             logger.info("Config file created")
             logger.info("Please fill the config file with the server information and restart the server.")
             exitProcess(0)
         }
-        // Calling the object so it gets initialized properly
+
         PlayerManager
         val connectedIPs = mutableListOf<String>()
-        socketServer = ServerSocket(serverPort);
+        socketServer = ServerSocket(serverPort)
+        // maybe todo: move to a coroutine
         Executors.newFixedThreadPool(1).submit {
             while (true) {
                 try {
                     val socket = socketServer!!.accept()
                     logger.info("Client connected from ${socket.inetAddress.hostAddress}")
                     connectedIPs.add(socket.inetAddress.hostAddress)
-                    threadExecutorPool.submit(GamePlayerClientHandler(socket))
+                    playerThreadExecutorPool.submit(GamePlayerClientHandler(socket))
                 } catch (e: Exception) {
                     connectedIPs.remove(socketServer!!.inetAddress.hostAddress)
                     logger.severe("Failed to accept connection")
@@ -54,25 +69,85 @@ object Server : OSGameServer() {
         }
 
         Executors.newSingleThreadExecutor().submit {
-            logger.info("Type 'stop' to stop the server")
+            println("Type 'stop' to stop the server")
             val scanner = Scanner(System.`in`)
-            while (true) {
-                val commandData = scanner.nextLine().split(" ")
-                val command = commandData[0]
-                val args = commandData.subList(1, commandData.size)
+//            val jLabel = javax.swing.JLabel("Enter your command:")
+//            val jTextField = javax.swing.JTextField()
+//            val jConfirm = javax.swing.JButton("Confirm")
+//            val jFrame = javax.swing.JFrame()
+//            jFrame.setSize(300, 100)
+//            jFrame.defaultCloseOperation = javax.swing.JFrame.EXIT_ON_CLOSE
+//            jFrame.add(jLabel, javax.swing.JFrame.CENTER_ALIGNMENT)
+//            jFrame.add(jTextField, javax.swing.JFrame.CENTER_ALIGNMENT)
+//            jFrame.add(jConfirm, javax.swing.JFrame.CENTER_ALIGNMENT)
+//            jFrame.isVisible = true
+//            jConfirm.addActionListener {
+//                val commandData = jTextField.text.split(" ")
+//                val command = commandData[0]
+//                val args = commandData.subList(1, commandData.size)
+//                if (command == "broadcast") {
+//                    broadcast(args.joinToString(" "))
+//                }
+//                if (command == "game") {
+//                    if (args[0] == "room") {
+//                        if (args[1] == "list") {
+//                            gameManager.getRooms().forEach {
+//                                logger.info("Room ${it.roomName} ID: ${it.roomNumber} Players: ${it.roomPlayerCount}/${it.roomMaxPlayers}")
+//                            }
+//                        }
+//                        if (args[1] == "create") {
+//                            if (args.size < 4) {
+//                                logger.info("Usage: game room create <roomName> <roomDescription> <maxPlayers>")
+//                                return@addActionListener
+//                            }
+//                            gameManager.addRoom(args[2], args[3], args[4].toInt(), "1.0", args[5].toInt(), 2, 0)
+//                        }
+//                    }
+//                }
+//
+//                if (command == "stop") {
+//                    stop()
+//                }
+//            }
 
-                if (command == "broadcast"){
-                    broadcast(args.joinToString(" "))
-                }
-
+            while (true){
+                var args = scanner.nextLine().split(" ")
+                val command = args[0]
+                args = args.subList(1, args.size)
                 if (command == "stop") {
                     stop()
-                    break
                 }
+                if (command == "broadcast") {
+                    broadcast(args.joinToString(" "))
+                }
+                if (command == "room") {
+                    // rewrite using args
+                    if (args[0] == "list") {
+                        println(
+                            gameManager.getRooms().joinToString("\n") {
+                                "Room ${it.roomName} ID: ${it.roomNumber} Players: ${it.roomPlayerCount}/${it.roomMaxPlayers}"
+                            }
+                        )
+                    }
+                    if (args[0] == "create") {
+                        if (args.size < 4) {
+                            println("Usage: game room create <roomName> <roomDescription> <maxPlayers>")
+                            continue
+                        }
+                        gameManager.addRoom(args[1], args[2], args[3].toInt(), "1.0", args[4].toInt(), 2, 0)
+                    }
+
+                }
+
             }
         }
+        logger.info("Server initialized")
     }
-    
+
+     /**
+      * Load the player profiles from the config file
+      * @see PlayerManager
+      **/
     fun loadPlayerProfiles() {
         val playersSection = config.getSection("players")
         playersSection.keys.forEach { key ->
@@ -106,6 +181,7 @@ object Server : OSGameServer() {
 
 
 
+
     override fun getOnlinePlayers(): List<Player> {
         return PlayerManager.getPlayers()
     }
@@ -115,7 +191,10 @@ object Server : OSGameServer() {
     }
 
     override fun broadcast(message: String) {
-        getOnlinePlayers().forEach { it.sendMessage(message) }
+        getOnlinePlayers().forEach {
+            logger.info("Broadcasting message to ${it.pseudoName}")
+            it.sendMessage(message)
+        }
     }
 
     override fun getOnlinePlayerCount(): Int {

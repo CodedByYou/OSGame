@@ -1,10 +1,11 @@
 package me.codedbyyou.os.server.enums
 
+import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.core.interfaces.player.Player
 
 /**
- * i will be implementing the 2/3 guessing game
- * here in this interface
+ * interface Game, represents a game in the server.
+ * a game that has rounds
  */
 interface Game {
 

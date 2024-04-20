@@ -1,8 +1,12 @@
 package me.codedbyyou.os.client.ui.dialog
 
 import com.lehaine.littlekt.Context
+import com.lehaine.littlekt.async.KT
+import com.lehaine.littlekt.async.KtScope
+import com.lehaine.littlekt.async.newSingleThreadAsyncContext
 import com.lehaine.littlekt.graph.SceneGraph
 import com.lehaine.littlekt.graph.node.Node
+import com.lehaine.littlekt.graph.node.addTo
 import com.lehaine.littlekt.graph.node.node
 import com.lehaine.littlekt.graph.node.resource.HAlign
 import com.lehaine.littlekt.graph.node.resource.InputEvent
@@ -14,9 +18,19 @@ import com.lehaine.littlekt.graphics.Fonts
 import com.lehaine.littlekt.input.Key
 import com.lehaine.littlekt.math.Vec2f
 import com.lehaine.littlekt.util.signal
+import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
+import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
+import me.codedbyyou.os.client.ui.soundButton
+import me.codedbyyou.os.core.enums.RoomStatus
+import me.codedbyyou.os.core.interfaces.server.Packet
+import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.core.interfaces.server.sendPacket
+import me.codedbyyou.os.core.models.GameRoomInfo
+import me.codedbyyou.os.core.models.deserialized
 import java.awt.Container
 import javax.naming.ldap.Control
 
@@ -87,6 +101,7 @@ class ChatBox() : PaddedContainer() {
     private val chatInput: LineEdit
     private var chatBoxContent: VBoxContainer
     private var chatSend: Button? = null
+    private var job: Job? = null
     init {
         anchor(layout = AnchorLayout.BOTTOM_LEFT)
         padding(10)
@@ -133,20 +148,51 @@ class ChatBox() : PaddedContainer() {
                     minWidth = 50f
                     onPressed += {
                         println("Sending message: ${chatInput.text}")
-                        chatBoxContent.addChildAt(column {
+                        chatBoxContent.apply{column {
                             label {
                                 text = "${Client.user?.nickTicket ?: "No User"}: ${chatInput.text}"
                                 horizontalAlign = HAlign.LEFT
                                 color = Color.LIME
                             }
-                        },
-                            chatBoxContent.children.size )
+                        }
+                        }
                         chatBox.position = Vec2f(0f,
                             chatBoxContent.children.size.toFloat() * chatBoxContent.children[0].viewport().virtualHeight)
+                        if (chatInput.text.startsWith("/")){
+                            Client.connectionManager.sendPacket(
+                                Packet(
+                                    PacketType.MESSAGE,
+                                    mapOf("message" to chatInput.text)
+                                )
+                            )
+                        } else {
+                            // send chat packet, not implemented yet throught he chatChannel
+                        }
                     }
                 }
             }
         }
+        job  = KtScope.launch {
+            withContext(newSingleThreadContext("ChatBoxThread")){
+                while (true){
+                    delay(500)
+                    val packet = Client.connectionManager.chatChannel.receive()
+                    if (packet.packetType == PacketType.MESSAGE) {
+                        val message = packet.packetData["message"].toString()
+                        chatBoxContent.apply{
+                            column {
+                                label {
+                                    text = message
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.GREEN
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        job!!.start()
     }
 }
 
@@ -156,7 +202,12 @@ fun Node.roomInfoDialog(context: Context, callback: RoomInfoDialog.() -> Unit = 
 class RoomInfoDialog(val our: Context) : PaddedContainer(){
     private val roomNameLabel: Label
     private val roomInfoContainer: ScrollContainer
-    private val roomList: VBoxContainer
+    private var roomList: VBoxContainer
+    val updateRooms = signal()
+    private val renderRooms = signal()
+    private val thread = newSingleThreadAsyncContext()
+    private val rooms: MutableList<GameRoomInfo> = mutableListOf()
+    private val isRoomInfoDialogVisible = false
     init {
         anchor(layout = AnchorLayout.CENTER_RIGHT)
         padding(10)
@@ -173,19 +224,18 @@ class RoomInfoDialog(val our: Context) : PaddedContainer(){
                     horizontalAlign = HAlign.LEFT
                 }
 
-                roomList = column {
+                column {
                     separation = 20
 
-                    column {
+                    roomList =column {
                         separation = 10
-                        for (i in 0..<10)
-                            column {
-                                label {
-                                    text = "Room #${i+1}: 1/4"
-                                    horizontalAlign = HAlign.LEFT
-                                    color = Color.GREEN
-                                }
+                        column {
+                            label {
+                                text = "No Rooms Available.."
+                                horizontalAlign = HAlign.LEFT
+                                color = Color.RED
                             }
+                        }
                     }
                 }
             }
@@ -197,17 +247,129 @@ class RoomInfoDialog(val our: Context) : PaddedContainer(){
             minHeight = 200f
             column {
                 separation = 10
-                for (i in 0 until 10)
-                    column {
-                        label {
-                            text = "Room 1: 1/4"
-                            horizontalAlign = HAlign.CENTER
-                            color = Color.GREEN
-                        }
-                    }
             }
         }
+        updateRooms += {
+            Client.connectionManager.sendPacket(
+                Packet(
+                    PacketType.GAMES_LIST
+                )
+            )
+            KtScope.launch {
+                withContext(newSingleThreadAsyncContext()) {
+                    val packet = Client.connectionManager.gameChannel.receive()
+                    if (packet.packetType == PacketType.GAMES_LIST) {
+                        val roomListData =
+                            packet.packetData["games"].toString().deserialized()
+                        rooms.clear()
+                        rooms += roomListData
+                        renderRooms.emit()
+                    }
+                }
+            }
+        }
+        renderRooms += {
+            KtScope.launch {
+                withContext(thread) {
+                    roomList.children.forEach {
+                        roomList.removeChild(it)
+                    }
+                    roomList.destroyAllChildren()
+                    val colWidth = our.graphics.width * 3/10f
+                    roomList.apply {
+                        column {
+                            row {
+                                label {
+                                    text = "Room Name"
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.GREEN
+                                    minWidth = colWidth * 0.6f
+                                }
+                                label {
+                                    text = "Players"
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.GREEN
+                                    minWidth = colWidth * 0.2f
+                                }
+                                label {
+                                    text = "Status"
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.GREEN
+                                    minWidth = colWidth * 0.2f
+                                }
+                                label {
+                                    text = "Join"
+                                    horizontalAlign = HAlign.RIGHT
+                                    color = Color.GREEN
+                                    minWidth = colWidth * 0.1f
+                                }
+                            }
+                        }
+                        rooms.forEach { room ->
+                            column {
+                                row {
+                                    label {
+                                        text = "${room.roomName}"
+                                        horizontalAlign = HAlign.LEFT
+                                        color = Color.GREEN
+                                        minWidth = colWidth*0.6f
+                                    }
+                                    label{
+                                        text = "${room.roomPlayerCount}/${room.roomMaxPlayers}"
+                                        horizontalAlign = HAlign.LEFT
+                                        color = Color.GREEN
+                                        minWidth = colWidth*0.2f
+                                    }
+                                    label{
+                                        text = "${room.roomStatus}"
+                                        horizontalAlign = HAlign.LEFT
+                                        color = when(room.roomStatus){
+                                            RoomStatus.STARTING -> Color.GREEN
+                                            RoomStatus.STARTED -> Color.BLUE
+                                            RoomStatus.ENDED -> Color.RED
+                                            RoomStatus.NOT_STARTED -> Color.LIME
+                                        }
+                                        minWidth = colWidth*0.2f
+                                    }
+                                    soundButton {
+                                        text = "Join"
+                                        disabled = room.roomStatus != RoomStatus.NOT_STARTED
+                                        onPressed += {
+//                                            Client.connectionManager.sendPacket(
+//                                                Packet(
+//                                                    PacketType.GAME_JOIN,
+//                                                    mapOf("roomID" to room.roomID)
+//                                                )
+//                                            )
+                                        }
+                                    }
 
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        KtScope.launch {
+            withContext(newSingleThreadAsyncContext()){
+                while (true){
+                    if (isRoomInfoDialogVisible) {
+                        if (Client.connectionManager.isConnected())
+                            updateRooms.emit()
+                    }
+                    delay(5000)
+                }
+            }
+        }
+    }
+
+    fun show() {
+        visible = true
+    }
+
+    fun hide() {
+        visible = false
     }
 }
 

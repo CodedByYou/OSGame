@@ -2,9 +2,10 @@ package me.codedbyyou.os.server.enums.impl
 
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.core.interfaces.player.Player
+import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.server.enums.Game
-import me.codedbyyou.os.server.enums.RoomStatus
 import kotlin.math.abs
 
 /**
@@ -161,3 +162,19 @@ class GameRoom(
         }
     }
 }
+
+
+
+/**
+ * Extension function to convert a GameRoom object to a GameRoomInfo object.
+ */
+fun GameRoom.toGameRoomInfo() = GameRoomInfo(
+    roomName,
+    roomNumber,
+    roomDescription,
+    roundsNumber,
+    roomStatus,
+    roomMaxPlayers,
+    roomPlayerCount,
+    roomPlayers.map { it.uniqueName }
+)

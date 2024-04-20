@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 plugins {
     kotlin("jvm")
     id("com.github.johnrengelman.shadow") version "8.1.1"
+    kotlin("plugin.serialization") version "1.9.23" apply false
     application
 }
 
@@ -19,6 +20,10 @@ dependencies {
     implementation(project(":core"))
     implementation("dev.dejvokep:boosted-yaml:1.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.reflections:reflections:0.9.12")
+//    implementation("javax.swing:javax.swing-api:1.0.0")
 }
 
 tasks.test {

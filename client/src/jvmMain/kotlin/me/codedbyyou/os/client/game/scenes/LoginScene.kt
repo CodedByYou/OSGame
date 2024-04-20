@@ -33,7 +33,15 @@ class LoginScene(
     context: Context
 ) : Scene(context)
 {
-
+    companion object {
+        var INSTANCE : LoginScene? = null
+            set(value) {
+                if (field != null) {
+                    return
+                }
+                field = value
+            }
+    }
     private val fontCache2 = BitmapFontCache(Fonts.default)
     val myBatch = SpriteBatch(context)
     private val camera = OrthographicCamera(context.graphics.width, context.graphics.height)
@@ -41,6 +49,7 @@ class LoginScene(
     private val exitMenuSignal = Signal()
     private var container : CenterContainer? = null
     private var serverList : ServerInfoDialog? = null
+    private var info : RoomInfoDialog? = null
     private var text = VectorFont.TextBlock(
         10f,
         25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}",24, Color.GREEN)))
@@ -68,10 +77,10 @@ class LoginScene(
                 }
 
             }
-            roomInfoDialog(context) {  }
             serverList = serverInfoDialog()
             chatBox()
             muteBox()
+            info  = roomInfoDialog(context) {  }
             exitMenuSignal+= {
                 if (exitMenu != null) {
                     container!!.children.forEach {
@@ -88,10 +97,14 @@ class LoginScene(
 
     }
 
-
+    init {
+        INSTANCE = this
+    }
 
     override suspend fun Context.show() {
         graph.initialize()
+        info!!.show();
+        info!!.updateRooms.emit();
         graph.root.enabled = true
         vectorFont.resize(context.graphics.width, context.graphics.height, this)
         graph.resize(graphics.width, graphics.height)
@@ -100,17 +113,14 @@ class LoginScene(
     override fun Context.render(dt: Duration) {
         gl.clear(ClearBufferMask.COLOR_BUFFER_BIT)
         gl.clear(ClearBufferMask.DEPTH_BUFFER_BIT)
-        graph.update(dt)
-        camera.update()
+
+
+
         text = VectorFont.TextBlock(
             10f,
             25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.GREEN)))
-        viewport_.update(graphics.width, graphics.height, context, true)
 
-        graph.render()
-        textureRect?.slice = Game.backgroundImage?.slice()
-        vectorFont.queue(text)
-        vectorFont.flush(viewport_.camera.viewProjection)
+        viewport_.update(graphics.width, graphics.height, context, true)
         if (input.isKeyJustPressed(com.lehaine.littlekt.input.Key.ESCAPE)) {
             exitMenuSignal.emit()
         }
@@ -120,6 +130,15 @@ class LoginScene(
         if (input.isKeyJustPressed(com.lehaine.littlekt.input.Key.TAB)) {
             serverList!!.toggleList?.emit()
         }
+        if (input.isKeyJustReleased(com.lehaine.littlekt.input.Key.ENTER)) {
+            info!!.updateRooms.emit()
+        }
+        graph.update(dt)
+        camera.update()
+        graph.render()
+        textureRect?.slice = Game.backgroundImage?.slice()
+        vectorFont.queue(text)
+        vectorFont.flush(viewport_.camera.viewProjection)
     }
 
     override fun Context.resize(width: Int, height: Int) {
@@ -139,4 +158,5 @@ class LoginScene(
         graph.root.enabled = false
         graph.releaseFocus()
     }
+
 }

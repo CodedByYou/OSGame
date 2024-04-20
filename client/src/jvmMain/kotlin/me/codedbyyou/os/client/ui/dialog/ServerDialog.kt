@@ -26,6 +26,8 @@ import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 
@@ -79,45 +81,26 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                     }
 
                 }
-                logger.info("Hello")
-                    onSelection(ServerMenuJoinScene::class)
+                onSelection(ServerMenuJoinScene::class)
             }
         }
         onEditServer += {
-
-            logger.info("Sending message to server")
-            Client.connectionManager.sendPacket(
-                Packet(
-                    PacketType.MESSAGE,
-                    mapOf("message" to "Hello from client just clicked on edit!")
-                )
-            )
-
-            KtScope.launch {
-                withContext(newSingleThreadAsyncContext()) {
-                    val packet = Client.connectionManager.channel.receive()
-                    logger.info("Received message from server ${packet.packetData}")
-                }
-            }
-
+            // TODO: Implement server editing
         }
         onRefresh += {
-            println("Refreshing server list")
             serverListColumn?.destroyAllChildren()
             for (server in Config.servers){
                 KtScope.launch {
-                    withContext(executor){
+                    withContext(newSingleThreadAsyncContext()){
                         server.ping()
                         serverListColumn?.renderServer(server, onEditServer, onServerConnect) {
                             chosenServer = it
                         }
-
                     }
                 }
             }
         }
         onAddServer += {
-            println("Adding server")
             chosenServer = null
             this@ServerDialog.parent!!.upsertServerDialog(chosenServer) {
                 this@ServerDialog.visible = false
@@ -192,7 +175,6 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                             } else {
                                 onRefresh.emit()
                             }
-
                         }
                     }
                     row {

@@ -3,9 +3,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "1.9.21" apply false
-    kotlin("plugin.serialization") version "1.9.21" apply false
-    kotlin("multiplatform") version "1.9.21" apply false
+    kotlin("jvm") version "1.9.23" apply false
+    kotlin("plugin.serialization") version "1.9.23" apply false
+    kotlin("multiplatform") version "1.9.23" apply false
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
 }
 
@@ -17,6 +17,7 @@ allprojects {
     group = "me.codedbyyou.os"
     description = "OSGame for Operating Systems Course"
     version = "1.0-SNAPSHOT"
+
 
     repositories {
         mavenCentral()
@@ -47,7 +48,7 @@ subprojects {
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
+//    testImplementation(kotlin("test"))
 //    implementation(kotlin("stdlib-jdk8"))
 }
 

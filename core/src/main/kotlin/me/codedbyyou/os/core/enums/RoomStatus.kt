@@ -1,4 +1,4 @@
-package me.codedbyyou.os.server.enums
+package me.codedbyyou.os.core.enums
 
 enum class RoomStatus {
     STARTED,

@@ -1,5 +1,6 @@
 package me.codedbyyou.os.client.game.manager
 
+import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
 import kotlinx.coroutines.GlobalScope
@@ -15,6 +16,7 @@ import me.codedbyyou.os.core.interfaces.server.sendPacket
 import java.io.OutputStream
 import java.net.Socket
 import java.util.logging.Logger
+import kotlin.reflect.KClass
 
 class ConnectionManager {
     private val logger = Logger.getLogger("ConnectionManager")
@@ -22,11 +24,57 @@ class ConnectionManager {
     private var connection: Socket? = null
     private var connectionJob: Job? = null
     private var output: OutputStream? = null
+
+    // i want to change scene
+    companion object {
+        var serverScreenCallBack : (suspend () -> Unit)? = null
+            set(value){
+                if (field != null){
+                    return
+                }
+                field = value
+            }
+    }
     val connectedToIP : String?
         get() = server?.ip
 
     val channel: Channel<Packet> = Channel()
 
+    /**
+     * channel will be used for async communication between the UI player list and the server
+     * this is such that the UI can be updated in real-time when a player joins or leaves the server
+     * or when a player is kicked or banned
+     * this will make sure other channels are not blocked by the UI traffic
+     */
+    val tabChannel: Channel<Packet> by lazy { Channel() }
+
+    /**
+     * channel will be used to handle game-related packets, such as game start, game end, round start, round end, etc.
+     * this will be used to update the UI in real-time when a game starts, ends, or when a player wins or loses
+     * this will make sure other channels are not blocked by the game traffic
+     */
+    val gameChannel : Channel<Packet>  = Channel()
+
+    /**
+     * channel will be used to handle chat-related packets, such as chat messages, private messages, public messages, etc.
+     * this will be used to update the Chat Box in real-time when a message is sent or received
+     * this will make sure other channels are not blocked by the chat traffic.
+     */
+    val chatChannel : Channel<Packet> = Channel()
+
+    /**
+     * Idea:
+     * serverInfo , i think for that it, it can use the tabChannel, and for that
+     * it will be renamed to serverInfoChannel
+     */
+
+    /**
+     * This function will be used to connect to the server
+     * @param _server the server to connect to
+     * @return ConnectionStatus.CONNECTED if the connection was successful
+     * @return ConnectionStatus.ALREADY_CONNECTED if the client is already connected to the server
+     * @return ConnectionStatus.DISCONNECTED if the client is disconnected from the server
+     */
     fun connectTo(_server: Server) : ConnectionStatus{
         if (server != null && server != _server) {
             logger.info("Disconnecting from server ${server!!.ip}")
@@ -46,17 +94,34 @@ class ConnectionManager {
         return ConnectionStatus.CONNECTED
     }
 
+    /**
+     * disconnects the client from the server
+     */
     fun disconnect() {
         connectionJob?.cancel()
         connection?.close()
         logger.info("Disconnected from server ${server!!.ip}")
         server = null
+        serverScreenCallBack?.let {
+            GlobalScope.launch {
+                withContext(GlobalScope.coroutineContext) {
+                    it()
+                }
+            }
+        }
     }
 
+    /**
+     * This function will be used to handle the connection to the server
+     * it is used inside a coroutine to handle the connection in a separate thread
+     * this is to make sure the UI is not blocked by the connection and to keep the connection alive
+     * @param socket the socket to connect to
+     */
     private fun handleConnection(socket: Socket) {
         val input = socket.getInputStream()
         output = socket.getOutputStream()
         val channelExecutor = newSingleThreadAsyncContext()
+        val gameChannelExecutor = newSingleThreadAsyncContext()
         val buffer = ByteArray(1024)
         var read : Int
         try {
@@ -89,8 +154,7 @@ class ConnectionManager {
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Message received: ${packetData["message"]}")
-                                // TODO: Handle Messages in another QUEUE Thread, for chat etc.
-                                // as for now, just logging is fine
+                                chatChannel.send(packet)
                             }
                         }
                     }
@@ -112,11 +176,33 @@ class ConnectionManager {
                     GAME_PLAYER_GUESS -> TODO()
                     GAME_PLAYER_WIN -> TODO()
                     GAME_PLAYER_LOSE -> TODO()
-                    GAMES_LIST -> TODO()
+                    GAMES_LIST -> {
+                        logger.info("Recieved games list")
+                        KtScope.launch {
+                            withContext(gameChannelExecutor){
+                                logger.info("Received games list")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
                     GAME_CREATE -> TODO()
-                    GAME_JOIN -> TODO()
+                    GAME_JOIN -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received player game join packet")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
                     GAME_LEAVE -> TODO()
-                    GAME_CHAT -> TODO()
+                    GAME_CHAT -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received game chat")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
                     GAME_CHAT_PRIVATE -> TODO()
                     GAME_CHAT_PUBLIC -> TODO()
                     SERVER_CHAT -> TODO()
@@ -149,7 +235,6 @@ class ConnectionManager {
                         }
                     }
                     SERVER_REGISTER_FAIL -> {
-
                         KtScope.launch {
                             withContext(channelExecutor) {
                                 logger.warning("Failed to register with server ${server?.ip}")
@@ -166,18 +251,34 @@ class ConnectionManager {
 
             }
         } catch (e: Exception) {
-            logger.info("Server disconnected ${server?.ip}")
+            disconnect()
+
         }
     }
 
+    /**
+     * This function will be used to send a packet to the server
+     * @param packet the packet to send
+     */
     fun sendPacket(packet: Packet) {
         packet.sendPacket(output!!)
     }
 
+    /**
+     * This function will be used to check if the client is connected to the server
+     * @return true if the client is connected to the server
+     * @return false if the client is not connected to the server
+     */
     fun isConnected(): Boolean {
         return connection != null && connection!!.isConnected
     }
 
+    /**
+     * Enum class to represent the connection status
+     * CONNECTED if the client is connected to the server
+     * ALREADY_CONNECTED if the client is already connected to the server
+     * DISCONNECTED if the client is disconnected from the server
+     */
     enum class ConnectionStatus {
         CONNECTED,
         ALREADY_CONNECTED,

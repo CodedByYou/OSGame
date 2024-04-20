@@ -1,5 +1,6 @@
 package me.codedbyyou.os.core.interfaces.server
 
+import kotlinx.serialization.Serializable
 import java.io.OutputStream
 
 /**
@@ -92,12 +93,13 @@ data class Packet(val packetType: PacketType) {
     }
 
     fun sendPacket(output: OutputStream) {
-        val dataString = packetData.map { "${it.key}:${it.value}" }.joinToString("\n")
+        val dataString = packetData.map { "${it.key}${Packet.DELLIMITER}${it.value}" }.joinToString("\n")
         val packet = "[${packetType.type}]$dataString"
         output.write(packet.toByteArray())
     }
 
     companion object {
+        private val DELLIMITER = 'ß';
         fun fromPacket(packet: String): Packet {
             val data = packet.substring(packet.indexOf("]") + 1)
             return Packet(getPacketData(packet), getPacketDataMapped(data))
@@ -111,7 +113,7 @@ data class Packet(val packetType: PacketType) {
         private fun getPacketDataMapped(packet: String): Map<String, String> {
             if (packet.isEmpty() || packet.isBlank()) return mapOf()
             return packet.split("\n").associate {
-                val split = it.split(":")
+                val split = it.split(DELLIMITER)
                 split[0] to split[1]
             }
         }

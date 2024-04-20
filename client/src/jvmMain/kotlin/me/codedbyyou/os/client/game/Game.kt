@@ -15,6 +15,7 @@ import com.lehaine.littlekt.graphics.gl.ClearBufferMask
 import com.lehaine.littlekt.graphics.slice
 import com.lehaine.littlekt.input.Key
 import kotlinx.coroutines.launch
+import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.game.scenes.LoginScene
@@ -28,15 +29,16 @@ class Game(context: Context) : Game<Scene>(context) {
         var backgroundImage : Texture? = null
             set(value) {
                 if (field != null) {
-                    println("BG is already set!")
                     return
                 }
                 field = value
             }
     }
-    private suspend fun <T : Scene> onSelection(scene: KClass<out T>) = setScene(scene)
+    private suspend fun <T : Scene> onSelection(scene: KClass<out T>) =
+        setScene(scene)
 
     override suspend fun Context.start() {
+
         KtScope.launch {
             backgroundImage = context.resourcesVfs["bg.png"].readTexture()
         }
@@ -70,9 +72,12 @@ class Game(context: Context) : Game<Scene>(context) {
             ::onSelection,
             context = this
         ))
-//        setScene<MenuScene>()
-        setScene<LoginScene>()
+        setScene<MenuScene>()
+//        setScene<LoginScene>()
 //        setScene<ServerMenuJoinScene>()
+//        ConnectionManager.serverScreenCallBack = {
+//                setScene<ServerMenuJoinScene>()
+//        }
     }
 
 
