@@ -25,10 +25,7 @@ import kotlin.reflect.jvm.kotlinFunction
 object CommandManager {
 
     private val logger = Logger.getLogger(CommandManager::class.java.name)
-    private val commands = mutableMapOf<String, Any>()
     private val command  = mutableMapOf<String, CommandHolder>()
-    private val aliases = mutableMapOf<String, String>()
-    private val permissions = mutableMapOf<String, String>()
     private val subCommands = mutableListOf<Triple<List<String>, CommandHolder, SubCommand>>()
 
     init {
@@ -54,13 +51,6 @@ object CommandManager {
                     null
             }
 
-
-            commands[commandName] = Class.forName(cmd.name).kotlin.createInstance()
-            aliases.forEach { alias ->
-                this.aliases[alias] = commandAnnotation?.name ?: ""
-            }
-            permissions[commandName] = basePermission
-            logger.info("Command $commandName registered.")
             val methods = cmd.declaredMethods
             val mainMethod = methods.find { it.isAnnotationPresent(MainCommand::class.java) }
             val subMethods = methods.filter { it.isAnnotationPresent(SubCommand::class.java) }
@@ -78,6 +68,7 @@ object CommandManager {
                     null
                 }
             }
+
             val subCommands = mutableListOf<CommandMethod>()
             val subCommandNames = mutableSetOf<String>()
             for (method in subMethods) {
@@ -96,16 +87,17 @@ object CommandManager {
             }
 
             val holder = CommandHolder(
-                instance = commands[commandName] as ICommand,
+                instance = Class.forName(cmd.name).kotlin.createInstance() as ICommand,
                 commandName, mainCommand, subCommands, mutableListOf(), basePermission,
                 aliases.toList()
             )
-            if (commandName != null)
-                this.command[commandName] = holder
 
+            if (commandName != null) {
+                this.command[commandName] = holder
+                logger.info("Command $commandName registered.")
+            }
             // means class has subcommand name
             if (subCommand != null) {
-                val subCommandName = subCommand.name
                 val subCommandFor = annotations.find { it is SubCommandFor } as SubCommandFor?
                 if (subCommandFor == null) {
                     logger.warning("Subcommand ${subCommand.name} for ${command.simpleName} does not have a @SubCommandFor annotation.")
