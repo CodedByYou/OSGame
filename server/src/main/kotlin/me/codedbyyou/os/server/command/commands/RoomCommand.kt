@@ -25,7 +25,4 @@ class RoomCommand : ICommand {
         player.sendMessage("Room created: $name")
     }
 
-    override fun help(sender: CommandSender) {
-        sender.sendMessage("Help for /room:")
-    }
 }

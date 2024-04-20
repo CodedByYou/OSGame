@@ -45,8 +45,4 @@ class MathCommand : ICommand {
         player.sendMessage("Result: ${a - b}")
     }
 
-    override fun help(sender: CommandSender) {
-        sender.sendMessage("/help math")
-    }
-
 }

@@ -170,6 +170,10 @@ object CommandManager {
 
     fun executeCommand(commandSender: CommandSender, commandName: String, args: List<String>){
         logger.info("Executing command $commandName with args $args")
+        if (commandName.equals("help", true) || commandName.equals("?", true)) {
+            handleHelp(commandSender, args)
+            return
+        }
         var commandHolder = command[commandName]
         if (commandHolder == null){
             for (entry in command) {
@@ -199,7 +203,6 @@ object CommandManager {
         }
 
         val (lastCommandHolder, subCommand, newArgs) = findSubCommand(commandHolder, args)
-
 
         if (subCommand == null){
             if (lastCommandHolder.mainMethod == null){
@@ -344,6 +347,36 @@ object CommandManager {
 
     }
 
+
+    /**
+     * method to show help for all commands depending on the arguments
+     * @param commandSender the command sender
+     * @param args the arguments
+     * @see CommandSender
+     */
+    private fun handleHelp(commandSender: CommandSender, args: List<String> = emptyList()){
+        if (args.isEmpty()) {
+            help(commandSender)
+            return
+        }
+        if (args.size == 1) {
+            val command = args[0]
+            if (command.toIntOrNull() != null) {
+                help(commandSender, command.toInt())
+                return
+            }
+            val commandHolder = this.command[command]
+            if (commandHolder == null) {
+                commandSender.sendMessage("[Server] [Usage] /<help, ?> <command | page>")
+                commandSender.sendMessage("[Server] [Help] Command $command not found.")
+                return
+            }
+            val (holder, method, args) = findSubCommand(commandHolder, args)
+            help(commandSender, holder)
+            return
+        }
+
+    }
     private fun parseArg(parameterType: Class<*>, argument: String) : Any? {
         if (parameterType.isAssignableFrom(String::class.java)) {
             return argument as String
@@ -410,9 +443,82 @@ object CommandManager {
             return null
         }
 
-      return null
+        return null
     }
 
+    /**
+     * method to show help for all commands
+     * @param commandSender the command sender
+     * @param page the page number
+     * @param resultPerPage the number of results per page
+     * @see CommandSender
+     */
+    private fun help(commandSender: CommandSender, page: Int = 0, resultPerPage: Int = 5){
+        val commands = command.values.toList()
+        val totalPages = (commands.size / resultPerPage) + 1
+        if (page > totalPages){
+            commandSender.sendMessage("Page $page not found.")
+            return
+        }
+        commandSender.sendMessage("Help Page $page/$totalPages")
+        for (i in page * resultPerPage..<(page + 1) * resultPerPage){
+            if (i >= commands.size)
+                break
+            help(commandSender, commands[i])
+        }
+    }
+
+    /**
+     * needs improvement later on for in-depth help on many subcommands level
+     */
+    private fun help(commandSender: CommandSender, commandHolder: CommandHolder){
+        commandSender.sendMessage("Help for ${commandHolder.name}:")
+        if (commandHolder.mainMethod != null){
+            val mainCommand = commandHolder.mainMethod
+            commandSender.sendMessage("Main Command:")
+            if (mainCommand.permission.isNotEmpty())
+                commandSender.sendMessage("Permission: ${mainCommand.permission}")
+            if (mainCommand.aliases.isNotEmpty())
+                commandSender.sendMessage("Aliases: ${mainCommand.aliases.joinToString(", ")}")
+            if (mainCommand.description.isNotEmpty())
+                commandSender.sendMessage("Description: ${mainCommand.description}")
+            else
+                commandSender.sendMessage("No description found.")
+            if (mainCommand.usage.isNotEmpty())
+                commandSender.sendMessage("Usage: ${mainCommand.usage}")
+            else
+                commandSender.sendMessage("No Command Usage found.")
+        }
+        if (commandHolder.subCommands.isNotEmpty() || commandHolder.subCommandHolder.isNotEmpty()){
+            commandSender.sendMessage("Sub Commands:")
+            for (subCommand in commandHolder.subCommands){
+                sendCommandHelp(commandSender, subCommand)
+            }
+            for (subCommand in commandHolder.subCommandHolder){
+                subCommand.mainMethod?.let { sendCommandHelp(commandSender, it) }
+                for (subSubCommand in subCommand.subCommands){
+                    sendCommandHelp(commandSender, subSubCommand)
+                }
+            }
+        } else {
+            commandSender.sendMessage("No sub commands found.")
+        }
+    }
+    private fun sendCommandHelp(commandSender: CommandSender, commandMethod: CommandMethod){
+        commandSender.sendMessage("- [${commandMethod.name}]:")
+        if (commandMethod.description.isNotEmpty())
+            commandSender.sendMessage("Description: ${commandMethod.description}")
+        else
+            commandSender.sendMessage("No description found.")
+        if (commandMethod.usage.isNotEmpty())
+            commandSender.sendMessage("Usage: ${commandMethod.usage}")
+        if (commandMethod.permission.isNotEmpty())
+            commandSender.sendMessage("Permission: ${commandMethod.permission}")
+        if (commandMethod.aliases.isNotEmpty())
+            commandSender.sendMessage("Aliases: ${commandMethod.aliases.joinToString(", ")}")
+        else
+            commandSender.sendMessage("No Command Usage found.")
+    }
 }
 
 

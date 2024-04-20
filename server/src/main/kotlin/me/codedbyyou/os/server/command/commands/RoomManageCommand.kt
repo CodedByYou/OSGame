@@ -24,8 +24,4 @@ class RoomManageCommand : ICommand {
         sender.sendMessage("Starting room.")
     }
 
-    override fun help(sender: CommandSender) {
-        sender.sendMessage("Help for /room manage:")
-    }
-
 }
