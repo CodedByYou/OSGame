@@ -76,7 +76,7 @@ class ConnectionManager {
      * @return ConnectionStatus.DISCONNECTED if the client is disconnected from the server
      */
     fun connectTo(_server: Server) : ConnectionStatus{
-        if (server != null && server != _server) {
+        if (server != null ) {
             logger.info("Disconnecting from server ${server!!.ip}")
             disconnect()
         }
@@ -99,7 +99,10 @@ class ConnectionManager {
      */
     fun disconnect() {
         connectionJob?.cancel()
-        connection?.close()
+        connection?.let {
+            if (!it.isClosed)
+                it.close()
+        }
         logger.info("Disconnected from server ${server!!.ip}")
         server = null
         serverScreenCallBack?.let {
@@ -251,6 +254,7 @@ class ConnectionManager {
 
             }
         } catch (e: Exception) {
+            logger.info("Disconnected")
             disconnect()
 
         }

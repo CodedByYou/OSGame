@@ -12,6 +12,7 @@ import com.lehaine.littlekt.graphics.Color
 import com.lehaine.littlekt.util.Signal
 import com.lehaine.littlekt.util.signal
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.codedbyyou.os.client.game.Game
@@ -53,10 +54,11 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                 val status = Client.connectionManager
                     .connectTo(chosenServer!!)
                 logger.info("Status: $status")
-                if (status == ConnectionManager.ConnectionStatus.ALREADY_CONNECTED)
-                    return@launch
+               //  if (status == ConnectionManager.ConnectionStatus.ALREADY_CONNECTED)
+               //     return@launch
                 logger.info("Status: $status")
-                if (chosenServer!!.psuedoName != null) {
+                delay(50)
+                if (chosenServer!!.psuedoName != null ) {
                     logger.info("Sending server auth packet")
                     Client.connectionManager.sendPacket(
                         Packet(

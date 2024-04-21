@@ -167,6 +167,13 @@ class ChatBox() : PaddedContainer() {
                             )
                         } else {
                             // send chat packet, not implemented yet throught he chatChannel
+                            // for now
+                            Client.connectionManager.sendPacket(
+                                Packet(
+                                    PacketType.MESSAGE,
+                                    mapOf("message" to chatInput.text)
+                                )
+                            )
                         }
                     }
                 }
