@@ -15,7 +15,7 @@ class GamePlayer(
     override val isOnline: Boolean,
     override val isPlayerBanned: Boolean,
     override val isPlayerMuted: Boolean,
-    override val isPlayerOp: Boolean,
+    override var isPlayerOp: Boolean,
     override val isPlayerWhitelisted: Boolean,
     override val ip: String,
     override val macAddress: String

@@ -169,7 +169,7 @@ object CommandManager {
 
 
     fun executeCommand(commandSender: CommandSender, commandName: String, args: List<String>){
-        logger.info("Executing command $commandName with args $args")
+        logger.info("[${if(commandSender.isConsole()) "Console" else ((commandSender as GamePlayer).uniqueName)}] executed command $commandName with args $args")
         if (commandName.equals("help", true) || commandName.equals("?", true)) {
             handleHelp(commandSender, args)
             return
@@ -177,6 +177,10 @@ object CommandManager {
         var commandHolder = command[commandName]
         if (commandHolder == null){
             for (entry in command) {
+                if (entry.value.aliases.contains(commandName)) {
+                    commandHolder = entry.value
+                    break
+                }
                 if (entry.value.subCommands.any { it.aliases.contains(commandName)}){
                     commandHolder = entry.value
                     break
@@ -209,6 +213,7 @@ object CommandManager {
                 commandSender.sendMessage("[Server] Unknown command $commandName. Type /help $commandName for more info.")
                 return
             }
+            println("Executing last command ${lastCommandHolder.mainMethod!!.name} with args $newArgs")
             executeCommand(lastCommandHolder.instance, commandSender, lastCommandHolder.mainMethod!!, args)
             return
         }
@@ -261,11 +266,20 @@ object CommandManager {
     }
 
     private fun executeCommand(instance: Any, commandSender: CommandSender, commandMethod: CommandMethod, args: List<String>){
+        if (!commandMethod.executor.isAssignableFrom(commandSender::class.java)){
+            val isPlayerCommand = commandMethod.executor.isAssignableFrom(GamePlayer::class.java)
+            commandSender.sendMessage("[Server] This command can only be ran ${if (isPlayerCommand) "by players" else "in the console"}")
+            return
+        }
+        if (commandMethod.permission.isNotEmpty() && !commandSender.hasPermission(commandMethod.permission)){
+            commandSender.sendMessage("[Server] You do not have permission to execute this command.")
+            return
+        }
         if (args.size < commandMethod.parameterCount - commandMethod.optionalParameterCount){
             commandSender.sendMessage("[Server] Usage: ${commandMethod.usage}")
             return
         }
-        val argsList = mutableListOf<Any>()
+        val argsList = mutableListOf<Any?>()
         argsList.add(commandSender)
         var isParameterCountOpen = false
         var failedAtParameter = -1
@@ -311,13 +325,16 @@ object CommandManager {
                 continue
             }
 
-            val parsedArg = parseArg(parameterType, argument) ?: break
+            val parsedArg = parseArg(parameterType, argument)
+//            check if it is optional parameter
+            if (parsedArg == null && !commandMethod.method.kotlinFunction!!.parameters[index+1].type.isMarkedNullable)
+                break
             argsList.add(parsedArg)
         }
 
-        logger.info("Failed at parameter $failedAtParameter with args ${argsList.size} and parameter count ${commandMethod.parameterCount} and optional parameter count ${commandMethod.optionalParameterCount}")
         if (failedAtParameter != -1 &&
             (argsList.size - 1) < commandMethod.parameterCount - commandMethod.optionalParameterCount ){
+            logger.info("Failed at parameter $failedAtParameter with args ${argsList.size} and parameter count ${commandMethod.parameterCount} and optional parameter count ${commandMethod.optionalParameterCount}")
             val usage = commandMethod.method.getAnnotation(Usage::class.java)
             commandSender.sendMessage("[Server] Invalid argument for parameter ${commandMethod.method.kotlinFunction!!.parameters[failedAtParameter+1].name}")
             if (usage != null)
@@ -378,9 +395,11 @@ object CommandManager {
 
     }
     private fun parseArg(parameterType: Class<*>, argument: String) : Any? {
+
         if (parameterType.isAssignableFrom(String::class.java)) {
             return argument as String
         }
+
         if (parameterType.isAssignableFrom(Int::class.java)) {
             try {
                 return argument.toInt()
@@ -441,6 +460,10 @@ object CommandManager {
                 return PlayerManager.getPlayer(argument)
             }
             return null
+        }
+
+        if (parameterType.isAssignableFrom(GamePlayer::class.java)) {
+            return PlayerManager.getPlayer(argument)
         }
 
         return null

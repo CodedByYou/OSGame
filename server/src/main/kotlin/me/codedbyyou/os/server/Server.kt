@@ -1,9 +1,12 @@
 package me.codedbyyou.os.server
 
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.internal.synchronized
 import me.codedbyyou.os.core.interfaces.impl.OSGameServer
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.ServerStatus
 import me.codedbyyou.os.server.command.CommandManager
+import me.codedbyyou.os.server.command.interfaces.impl.ConsoleCommandSender
 import me.codedbyyou.os.server.events.manager.EventManager
 import me.codedbyyou.os.server.managers.GameRoomManager
 import me.codedbyyou.os.server.player.manager.PlayerManager
@@ -29,11 +32,13 @@ import kotlin.system.exitProcess
  * @property gameManager the game manager
  * @property eventsManager the events manager
  */
+@OptIn(InternalCoroutinesApi::class)
 object Server : OSGameServer() {
 
     private var status: ServerStatus = ServerStatus.STARTING
     private var socketServer: ServerSocket? = null
     private val playerThreadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
+    val consoleCommandSender = ConsoleCommandSender()
 
     val gameManager = GameRoomManager()
     val eventsManager = EventManager()
@@ -111,34 +116,19 @@ object Server : OSGameServer() {
 //            }
 
             while (true){
-                var args = scanner.nextLine().split(" ")
+                var args : List<String>
+                synchronized(scanner) {
+                    args = scanner.nextLine().split(" ")
+                }
                 val command = args[0]
                 args = args.subList(1, args.size)
-                if (command == "stop") {
+                if (command.equals("stop", true)) {
                     stop()
                 }
-                if (command == "broadcast") {
-                    broadcast(args.joinToString(" "))
-                }
-                if (command == "room") {
-                    // rewrite using args
-                    if (args[0] == "list") {
-                        println(
-                            gameManager.getRooms().joinToString("\n") {
-                                "Room ${it.roomName} ID: ${it.roomNumber} Players: ${it.roomPlayerCount}/${it.roomMaxPlayers}"
-                            }
-                        )
-                    }
-                    if (args[0] == "create") {
-                        if (args.size < 4) {
-                            println("Usage: game room create <roomName> <roomDescription> <maxPlayers>")
-                            continue
-                        }
-                        gameManager.addRoom(args[1], args[2], args[3].toInt(), "1.0", args[4].toInt(), 2, 0)
-                    }
-
-                }
-
+//                if (command == "broadcast") {
+//                    broadcast(args.joinToString(" "))
+//                }
+                CommandManager.executeCommand(consoleCommandSender, command, args)
             }
         }
         logger.info("Server initialized")
@@ -180,21 +170,30 @@ object Server : OSGameServer() {
     }
 
 
+    /**
+     * Get all online players
+     * @return A list of all online players
+     * @see PlayerManager.getOnlinePlayers
+     */
+    override fun getOnlinePlayers(): List<Player> = PlayerManager.getOnlinePlayers()
 
+    /**
+     * Get all offline players
+     * @return A list of all offline players
+     * @see PlayerManager.getOfflinePlayers
+     */
+    override fun getOfflinePlayers(): List<Player> = PlayerManager.getOfflinePlayers()
 
-    override fun getOnlinePlayers(): List<Player> {
-        return PlayerManager.getPlayers()
-    }
-
-    override fun getOfflinePlayers(): List<Player> {
-        return PlayerManager.getPlayers()
-    }
-
+    /**
+     * Broadcast a message to all players, including the console
+     * @param message The message to broadcast
+     * @see PlayerManager
+     * For more versatility, use the broadcastMessage method in PlayerManager
+     * It allows you to exclude players from the broadcast
+     * @see PlayerManager.broadcastMessage()
+     */
     override fun broadcast(message: String) {
-        getOnlinePlayers().forEach {
-            logger.info("Broadcasting message to ${it.pseudoName}")
-            it.sendMessage(message)
-        }
+        PlayerManager.broadcastMessage(message, includeConsole = true)
     }
 
     override fun getOnlinePlayerCount(): Int {

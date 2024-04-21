@@ -1,13 +1,12 @@
 package me.codedbyyou.os.server.command.commands
 
 import me.codedbyyou.os.server.command.annotations.*
-import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.command.interfaces.ICommand
 import me.codedbyyou.os.server.player.GamePlayer
 
 
 /**
- * Example of Command System
+ * Simple Example of Command System
  */
 @Command("math", "m")
 @Description("A command to perform math operations.")
@@ -18,7 +17,7 @@ class MathCommand : ICommand {
     @Permission("math")
     @Description("Main command for math operations.")
     fun main(player: GamePlayer) {
-        player.sendMessage("Math command.")
+        player.sendMessage("[Usage] /math <add|subtract|multiply|divide> <a> <b>")
     }
 
     @Usage("/math multiply <a> <b>")
@@ -33,6 +32,10 @@ class MathCommand : ICommand {
     @Description("Divide two numbers.")
     @Usage("/math divide <a> <b>")
     fun divide(player: GamePlayer, a: Int, b: Int) {
+        if (b == 0) {
+            player.sendMessage("Cannot divide by zero.")
+            return
+        }
         player.sendMessage("Dividing $a / $b")
         player.sendMessage("Result: ${a / b}")
     }

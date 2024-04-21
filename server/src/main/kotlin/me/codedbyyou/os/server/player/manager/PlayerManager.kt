@@ -209,6 +209,19 @@ object PlayerManager {
     }
 
     /**
+     * Get Online Players
+     * @return A list of all online players
+     */
+    fun getOnlinePlayers(): List<Player> = players.values.filter { it.isOnline }
+
+    /**
+     * Get Offline Players
+     * @return A list of all offline players
+     */
+    fun getOfflinePlayers(): List<Player> = players.values.filter { !it.isOnline }
+
+
+    /**
      * Loads a player into the player manager from the server's configuration file
      * @param nickname The player's nickname
      * @param ticket The player's ticket
@@ -256,12 +269,14 @@ object PlayerManager {
 
 
     /**
-     * Broadcasts a message to all players
+     * Broadcasts a message to all players, including the console (can be excluded)
      * @param message The message to broadcast
      * @param exceptions A list of players to exclude from the broadcast
      * @param permission The permission required to receive the message
+     * @param includeConsole Whether to include the console in the broadcast
      */
-    fun broadcastMessage(message: String, exceptions: List<String> = listOf(), permission: String = "") {
+    fun broadcastMessage(message: String, exceptions: List<String> = listOf(), permission: String = "", includeConsole : Boolean = true) {
+
         players.values.forEach { player ->
             player as GamePlayer
             if (player.isOnline && !exceptions.contains(player.uniqueName) &&
@@ -269,5 +284,8 @@ object PlayerManager {
                 player.sendMessage(message)
             }
         }
+
+        if (includeConsole)
+            Server.consoleCommandSender.sendMessage(message)
     }
 }

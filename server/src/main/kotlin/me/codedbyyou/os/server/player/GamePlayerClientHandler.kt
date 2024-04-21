@@ -68,8 +68,15 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                     MESSAGE -> {
                         val message = packetData["message"].toString()
                         logger.info("Message received from ${socket.inetAddress.hostAddress} $nickname: $message")
-                        if (!message.startsWith("/"))
+                        // for now i will forward chat messages through here
+                        if (!message.startsWith("/")){
+                            PlayerManager.broadcastMessage("[${nickname}]: $message", listOf(player!!.uniqueName))
                             return
+                        }
+
+
+//                        if (!message.startsWith("/"))
+//                            return
 
                         var args = message.replaceFirst("/","").split(" ").toMutableList()
                         val command = args[0]
