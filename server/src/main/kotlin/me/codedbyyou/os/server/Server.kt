@@ -76,45 +76,6 @@ object Server : OSGameServer() {
         Executors.newSingleThreadExecutor().submit {
             println("Type 'stop' to stop the server")
             val scanner = Scanner(System.`in`)
-//            val jLabel = javax.swing.JLabel("Enter your command:")
-//            val jTextField = javax.swing.JTextField()
-//            val jConfirm = javax.swing.JButton("Confirm")
-//            val jFrame = javax.swing.JFrame()
-//            jFrame.setSize(300, 100)
-//            jFrame.defaultCloseOperation = javax.swing.JFrame.EXIT_ON_CLOSE
-//            jFrame.add(jLabel, javax.swing.JFrame.CENTER_ALIGNMENT)
-//            jFrame.add(jTextField, javax.swing.JFrame.CENTER_ALIGNMENT)
-//            jFrame.add(jConfirm, javax.swing.JFrame.CENTER_ALIGNMENT)
-//            jFrame.isVisible = true
-//            jConfirm.addActionListener {
-//                val commandData = jTextField.text.split(" ")
-//                val command = commandData[0]
-//                val args = commandData.subList(1, commandData.size)
-//                if (command == "broadcast") {
-//                    broadcast(args.joinToString(" "))
-//                }
-//                if (command == "game") {
-//                    if (args[0] == "room") {
-//                        if (args[1] == "list") {
-//                            gameManager.getRooms().forEach {
-//                                logger.info("Room ${it.roomName} ID: ${it.roomNumber} Players: ${it.roomPlayerCount}/${it.roomMaxPlayers}")
-//                            }
-//                        }
-//                        if (args[1] == "create") {
-//                            if (args.size < 4) {
-//                                logger.info("Usage: game room create <roomName> <roomDescription> <maxPlayers>")
-//                                return@addActionListener
-//                            }
-//                            gameManager.addRoom(args[2], args[3], args[4].toInt(), "1.0", args[5].toInt(), 2, 0)
-//                        }
-//                    }
-//                }
-//
-//                if (command == "stop") {
-//                    stop()
-//                }
-//            }
-
             while (true){
                 var args : List<String>
                 synchronized(scanner) {

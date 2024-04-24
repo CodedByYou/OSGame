@@ -114,14 +114,6 @@ class ChatBox() : PaddedContainer() {
                 minHeight = 200f
                 chatBoxContent = column {
                     separation = 10
-                    for (i in 0 until 10)
-                        column {
-                            label {
-                                text = "Player 1: Hello"
-                                horizontalAlign = HAlign.LEFT
-                                color = Color.GREEN
-                            }
-                        }
                 }
             }
             row {
@@ -140,21 +132,21 @@ class ChatBox() : PaddedContainer() {
                     }
 
                     onFocusLost+={
-                        chatBox.visible = false
+                        chatBox.visible = true
                     }
                 }
                 chatSend = button {
                     text = "Send"
                     minWidth = 50f
                     onPressed += {
-                        println("Sending message: ${chatInput.text}")
-                        chatBoxContent.apply{column {
-                            label {
-                                text = "${Client.user?.nickTicket ?: "No User"}: ${chatInput.text}"
-                                horizontalAlign = HAlign.LEFT
-                                color = Color.LIME
+                        chatBoxContent.apply{
+                            column {
+                                label {
+                                    text = "${Client.user?.nickTicket ?: "No User"}: ${chatInput.text}"
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.LIME
+                                }
                             }
-                        }
                         }
                         chatBox.position = Vec2f(0f,
                             chatBoxContent.children.size.toFloat() * chatBoxContent.children[0].viewport().virtualHeight)
@@ -166,14 +158,13 @@ class ChatBox() : PaddedContainer() {
                                 )
                             )
                         } else {
-                            // send chat packet, not implemented yet throught he chatChannel
-                            // for now
                             Client.connectionManager.sendPacket(
                                 Packet(
                                     PacketType.MESSAGE,
                                     mapOf("message" to chatInput.text)
                                 )
                             )
+                            // what might go wrong here?
                         }
                     }
                 }

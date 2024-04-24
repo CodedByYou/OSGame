@@ -26,6 +26,7 @@ class GamePlayer(
 
     override fun sendMessage(message: String) {
         addPacket(Packet(PacketType.MESSAGE, mapOf("message" to message)))
+        println("Message sent to $pseudoName: $message")
     }
 
     override fun sendTitle(title: String, subtitle: String) {

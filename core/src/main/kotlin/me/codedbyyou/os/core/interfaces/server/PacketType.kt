@@ -53,7 +53,6 @@ enum class PacketType(val type: Int) {
 
     /**
      * 3. Server Authentication packets under 1.
-     * what would be the best way to handle authentication with tickets for usernames?
      * 1. Client sends a name ticket combination to the server with mac address
      * 2. Server checks if the ticket is valid and if the mac address is the same
      * 3. Server replies with a success or fail packet
@@ -63,7 +62,6 @@ enum class PacketType(val type: Int) {
 
     /**
      * 4. Server Registration packets under 1.
-     * what would be the best way to handle registration with tickets for usernames?
      * 1. Client sends a psuedo-name, and mac address to the server
      * 2. Server generates a ticket and sends it back to the client with a success packet
      * 2.a Server authenticates the client with the ticket at the same time
@@ -96,6 +94,7 @@ data class Packet(val packetType: PacketType) {
         val dataString = packetData.map { "${it.key}${Packet.DELLIMITER}${it.value}" }.joinToString("\n")
         val packet = "[${packetType.type}]$dataString"
         output.write(packet.toByteArray())
+        output.flush()
     }
 
     companion object {

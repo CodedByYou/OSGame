@@ -1,9 +1,6 @@
 package me.codedbyyou.os.server.player.manager
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.server.Server
@@ -40,16 +37,17 @@ object PlayerManager {
          * Launches a coroutine to process player packets
          */
         playerProcessRoutine.launch {
-            while (true) {
-                while (playerPackets.isNotEmpty()) {
-                    val (player, packet) = playerPackets.poll()
-                    playerDataProcessors[player.uniqueName].let {
-                        packet.sendPacket(it!!)
-                        it.flush()
-                        logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
+            withContext(newSingleThreadContext("PlayerPacketProcessor")) {
+                while (true) {
+                    while (playerPackets.isNotEmpty()) {
+                        val (player, packet) = playerPackets.poll()
+                        playerDataProcessors[player.uniqueName].let {
+                            packet.sendPacket(it!!)
+                            logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
+                        }
                     }
+                    delay(50)
                 }
-                delay(50)
             }
         }.start()
     }

@@ -2,6 +2,7 @@ package me.codedbyyou.os.server.command.commands
 
 import me.codedbyyou.os.server.command.annotations.*
 import me.codedbyyou.os.server.command.interfaces.ICommand
+import me.codedbyyou.os.server.command.interfaces.impl.ConsoleCommandSender
 import me.codedbyyou.os.server.player.GamePlayer
 
 
@@ -16,7 +17,7 @@ class MathCommand : ICommand {
     @Usage("/math")
     @Permission("math")
     @Description("Main command for math operations.")
-    fun main(player: GamePlayer) {
+    fun main(player: ConsoleCommandSender) {
         player.sendMessage("[Usage] /math <add|subtract|multiply|divide> <a> <b>")
     }
 

@@ -52,7 +52,7 @@ class LoginScene(
     private var info : RoomInfoDialog? = null
     private var text = VectorFont.TextBlock(
         10f,
-        25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}",24, Color.GREEN)))
+        25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}",24, Color.LIGHT_RED)))
     private val viewport_ = ExtendViewport(context.graphics.width, context.graphics.height, camera).also { it.apply { context } }
     private var exitMenu : Node? = null
     private var textureRect : TextureRect? = null
@@ -118,7 +118,7 @@ class LoginScene(
 
         text = VectorFont.TextBlock(
             10f,
-            25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.GREEN)))
+            25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.RED)))
 
         viewport_.update(graphics.width, graphics.height, context, true)
         if (input.isKeyJustPressed(com.lehaine.littlekt.input.Key.ESCAPE)) {
