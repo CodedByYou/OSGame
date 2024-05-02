@@ -93,6 +93,7 @@ class GameRoom(
             player.sendMessage("You are a spectator")
             return
         }
+
         if (currentGuesses.containsKey(player)) {
             player.sendMessage("You have already guessed for this round")
             return
