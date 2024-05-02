@@ -77,8 +77,8 @@ class GameRoom(
                 roomPlayers.forEach { player ->
                     // send packet of game start
                     player as GamePlayer
-                    player.addPacket(PacketType.GAME_START.toPacket())
                     player.sendMessage("Game has started")
+                    player.addPacket(PacketType.GAME_START.toPacket())
                     player.sendActionBar("Round 1")
                     // send packet of round start
                     player.addPacket(PacketType.GAME_ROUND_START.toPacket())
@@ -138,8 +138,11 @@ class GameRoom(
                 player.sendMessage("Winners: ${winners.joinToString { it.uniqueName }}")
                 player as GamePlayer
                 player.addPacket(PacketType.GAME_ROUND_INFO.toPacket(mapOf(
-
-                    
+                    "round" to currentRound,
+                    "average" to average,
+                    "two thirds" to twoThirds,
+                    "closest" to closest,
+                    "winners" to winners.joinToString { it.uniqueName }
                 )))
             }
             currentGuesses.clear()
@@ -157,7 +160,9 @@ class GameRoom(
             player.sendMessage("Scores: ${scores.sum()}")
             player as GamePlayer
             player.addPacket(PacketType.GAME_PLAYER_INFO.toPacket(mapOf(
-                "position" to
+                "position" to (index+1),
+                "player" to player.uniqueName,
+                "scores" to scores.sum()
             )))
         }
     }
