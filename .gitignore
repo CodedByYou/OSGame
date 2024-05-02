@@ -27,8 +27,8 @@ out/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-.\idea\misc.xml
-.idea\runConfigurations\Main__jvm_.xml
+./idea/misc.xml
+.idea/runConfigurations/Main__jvm_.xml
 
 ### NetBeans ###
 /nbproject/private/
@@ -42,3 +42,4 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+.idea/misc.xml
