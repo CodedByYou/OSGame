@@ -18,6 +18,7 @@ import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.core.models.serialized
 import me.codedbyyou.os.server.command.CommandManager
 import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
+import me.codedbyyou.os.server.events.custom.PlayerChatEvent
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadPoolExecutor
@@ -73,7 +74,10 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             logger.info("Message received from ${socket.inetAddress.hostAddress} $nickname: $message")
                             // for now, I will forward chat messages through here
                             if (!message.startsWith("/")) {
-                                PlayerManager.broadcastMessage("[${nickname}]: $message", listOf(player!!.uniqueName))
+                                val playerChatEvent = PlayerChatEvent(player as GamePlayer, message)
+                                Server.eventsManager.fireEvent(playerChatEvent)
+                                if(!playerChatEvent.isCancelled)
+                                    PlayerManager.broadcastMessage("[${nickname}]: ${playerChatEvent.message}", listOf(player!!.uniqueName))
                                 continue
                             }
 
