@@ -72,8 +72,10 @@ class GameRoom(
                     Thread.sleep(1000)
                 }
                 roomPlayers.forEach { player ->
+                    // send packet of game start
                     player.sendMessage("Game has started")
                     player.sendActionBar("Round 1")
+                    // send packet of round start
                 }
                 roomStatus = RoomStatus.STARTED
             }

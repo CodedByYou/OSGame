@@ -71,7 +71,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         MESSAGE -> {
                             val message = packetData["message"].toString()
                             logger.info("Message received from ${socket.inetAddress.hostAddress} $nickname: $message")
-                            // for now i will forward chat messages through here
+                            // for now, I will forward chat messages through here
                             if (!message.startsWith("/")) {
                                 PlayerManager.broadcastMessage("[${nickname}]: $message", listOf(player!!.uniqueName))
                                 continue
@@ -124,7 +124,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             logger.info("Player $nickname has left the server: $message")
                             // fire room leave event if player is in a room and remove player from room
                             // fire player leave event // move logic to the event
-                            PlayerManager.getPlayers().forEach { it.sendMessage("$nickname has left the server") }
+                            PlayerManager.broadcastMessage("$nickname has left the server")
                         }
 //                    PacketPrefix.PLAYER_INFO ->
                         ROOM_INFO -> {
@@ -193,6 +193,17 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         SERVER_CHAT -> TODO()
                         SERVER_CHAT_PRIVATE -> TODO()
                         SERVER_CHAT_PUBLIC -> TODO()
+                        SERVER_PLAYER_LIST -> {
+                            val players = PlayerManager.getOnlinePlayers()
+                                .map { it.uniqueName }
+
+                            SERVER_PLAYER_LIST
+                                .toPacket(
+                                    mapOf(
+                                        "players" to players.joinToString("+")
+                                    )
+                                ).sendPacket(output)
+                        }
                         SERVER_AUTH -> {
                             val nickTicket = packetData["nickTicket"] as String
                             val macAddress = packetData["macAddress"] as String
@@ -206,6 +217,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                     )
                                     this.nickname = nickTicket
                                     SERVER_AUTH_SUCCESS.sendPacket(output)
+                                    PlayerManager.broadcastMessage("$nickTicket has joined the server")
                                 }
                             } else {
                                 SERVER_AUTH_FAIL.sendPacket(output)
@@ -237,6 +249,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                         .sendPacket(output)
                                     logger.info("Connection still open: ${socket.isConnected}")
                                     logger.info("Sent Packet: $SERVER_REGISTER_SUCCESS")
+                                    PlayerManager.broadcastMessage("${this.nickname} has joined the server")
                                 }
                             } catch (e: TicketOutOfBoundsException) {
                                 /**
@@ -251,6 +264,9 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                     }
                 }
             }
+        if (player != null) {
+            PlayerManager.disconnect(player!!.uniqueName)
+        }
 
         logger.info("Client disconnected from ${socket.inetAddress.hostAddress}") // this will never be reached
     }

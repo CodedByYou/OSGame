@@ -50,6 +50,7 @@ enum class PacketType(val type: Int) {
      * 2. Server Chat packets under 1.
      */
     SERVER_CHAT(31), SERVER_CHAT_PRIVATE(32), SERVER_CHAT_PUBLIC(33),
+    SERVER_PLAYER_LIST(34),
 
     /**
      * 3. Server Authentication packets under 1.
@@ -58,7 +59,7 @@ enum class PacketType(val type: Int) {
      * 3. Server replies with a success or fail packet
      * 4. Now every packet sent by client is known on server side
      */
-    SERVER_AUTH(34), SERVER_AUTH_SUCCESS(35), SERVER_AUTH_FAIL(36),
+    SERVER_AUTH(35), SERVER_AUTH_SUCCESS(36), SERVER_AUTH_FAIL(37),
 
     /**
      * 4. Server Registration packets under 1.
@@ -67,7 +68,7 @@ enum class PacketType(val type: Int) {
      * 2.a Server authenticates the client with the ticket at the same time
      * 3. communication is now secure and known on server side
      */
-    SERVER_REGISTER(37), SERVER_REGISTER_SUCCESS(38), SERVER_REGISTER_FAIL(39),
+    SERVER_REGISTER(38), SERVER_REGISTER_SUCCESS(39), SERVER_REGISTER_FAIL(40),
 
     /**
      * 5. Server Error packets under 1.

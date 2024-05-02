@@ -179,7 +179,7 @@ object PlayerManager {
         if (playerDataProcessors.containsKey(nickTicket)) {
             val outputStream = playerDataProcessors[nickTicket]!!
             outputStream.close()
-            return
+            playerDataProcessors.remove(nickTicket)
         }
         val player = players[nickTicket]
         players[nickTicket] = GamePlayer(
@@ -193,7 +193,6 @@ object PlayerManager {
             ip = player.ip,
             macAddress = player.macAddress
         )
-        playerDataProcessors.remove(nickTicket)
     }
 
     /**

@@ -7,8 +7,6 @@ import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import java.util.concurrent.ConcurrentLinkedQueue
 
-
-
 class GamePlayer(
     override val pseudoName: String,
     override val ticket: String,
@@ -44,7 +42,7 @@ class GamePlayer(
         println("Player $pseudoName has been kicked for $reason")
     }
 
-    private fun addPacket(packet: Packet) {
+    fun addPacket(packet: Packet) {
        playerManager.addPacket("$pseudoName#$ticket", packet)
     }
 

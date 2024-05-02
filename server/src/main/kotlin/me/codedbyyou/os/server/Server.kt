@@ -1,6 +1,6 @@
 package me.codedbyyou.os.server
 
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.internal.synchronized
 import me.codedbyyou.os.core.interfaces.impl.OSGameServer
 import me.codedbyyou.os.core.interfaces.player.Player
@@ -15,6 +15,7 @@ import java.net.ServerSocket
 import java.util.Scanner
 import java.util.concurrent.Executors
 import java.util.logging.Logger
+import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 
 
@@ -38,6 +39,7 @@ object Server : OSGameServer() {
     private var status: ServerStatus = ServerStatus.STARTING
     private var socketServer: ServerSocket? = null
     private val playerThreadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
+    private val lastPinged = mutableMapOf<String, Long>()
     val consoleCommandSender = ConsoleCommandSender()
 
     val gameManager = GameRoomManager()
@@ -72,6 +74,21 @@ object Server : OSGameServer() {
                 }
             }
         }
+
+       // is working but needs completion, till then it is commented out
+       // to not kick the players out
+       // AFK SECTION
+//        GlobalScope.launch {
+//            launch {
+//                while (true) {
+//                    lastPinged.filter { System.currentTimeMillis() - it.value > 5000 }.forEach {
+//                        PlayerManager.disconnect(PlayerManager.getPlayer(it.key)!!.uniqueName)
+//                        lastPinged.remove(it.key)
+//                    }
+//                    delay(100)
+//                }
+//            }
+//        }
 
         Executors.newSingleThreadExecutor().submit {
             println("Type 'stop' to stop the server")

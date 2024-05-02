@@ -3,11 +3,8 @@ package me.codedbyyou.os.client.game.manager
 import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.ui.dialog.Server
 import me.codedbyyou.os.core.interfaces.server.Packet
@@ -24,6 +21,7 @@ class ConnectionManager {
     private var connection: Socket? = null
     private var connectionJob: Job? = null
     private var output: OutputStream? = null
+    private var lastActive = System.currentTimeMillis()
 
     // i want to change scene
     companion object {
@@ -103,11 +101,13 @@ class ConnectionManager {
             if (!it.isClosed)
                 it.close()
         }
-        logger.info("Disconnected from server ${server!!.ip}")
+        if (server != null)
+            logger.info("Disconnected from server ${server!!.ip}")
         server = null
         serverScreenCallBack?.let {
             GlobalScope.launch {
-                withContext(GlobalScope.coroutineContext) {
+                withContext(newSingleThreadAsyncContext()){
+                    delay(1000)
                     it()
                 }
             }
@@ -242,6 +242,14 @@ class ConnectionManager {
                             withContext(channelExecutor) {
                                 logger.warning("Failed to register with server ${server?.ip}")
                                 channel.send(packet)
+                            }
+                        }
+                    }
+                    SERVER_PLAYER_LIST -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received player list")
+                                tabChannel.send(packet)
                             }
                         }
                     }

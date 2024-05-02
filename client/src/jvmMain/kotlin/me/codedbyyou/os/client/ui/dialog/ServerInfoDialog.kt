@@ -41,7 +41,9 @@ class ServerInfoDialog() : PaddedContainer() {
     private val serverNameLabel: Label
     private val playersContainer: ScrollContainer
     val toggleList = signal()
+    val updatePlayers = signal()
     init {
+
         anchor(layout = AnchorLayout.CENTER_TOP)
         padding(10)
         column {
@@ -50,31 +52,20 @@ class ServerInfoDialog() : PaddedContainer() {
                 text = Client.connectionManager.connectedToIP ?: "No Server"
                 horizontalAlign = HAlign.CENTER
             }
-            val connectedPlayers = listOf("Player 1", "Player 2", "Player 3")
             playersContainer = scrollContainer {
                 separation = 20
                 minWidth = 200f
                 minHeight = 200f
                 column {
                     separation = 10
-                    for (i in 0 until 10)
-                    connectedPlayers.forEach { player ->
-                        column {
-                            label {
-                                text = player
-                                horizontalAlign = HAlign.CENTER
-                                color = Color.GREEN
-                            }
-                        }
-                    }
                 }
             }
         }
 
         visible = false
         toggleList += {
-
             if (!visible) {
+                updatePlayers.emit()
                 visible = !visible
                 serverNameLabel.text = Client.connectionManager.connectedToIP ?: "No Server"
                 if (serverNameLabel.hasFocus) {
@@ -88,7 +79,37 @@ class ServerInfoDialog() : PaddedContainer() {
                 visible = false
             }
         }
-
+        updatePlayers += {
+            Client.connectionManager.sendPacket(
+                Packet(
+                    PacketType.SERVER_PLAYER_LIST
+                )
+            )
+            KtScope.launch {
+                withContext(newSingleThreadAsyncContext()) {
+                    val packet = Client.connectionManager.tabChannel.receive()
+                    if (packet.packetType == PacketType.SERVER_PLAYER_LIST) {
+                        val playerListData =
+                            packet.packetData["players"].toString().split("+")
+                        playersContainer!!.apply {
+                            destroyAllChildren()
+                            column {
+                                separation = 10
+                                playerListData.forEach { player ->
+                                    column {
+                                        label {
+                                            text = player
+                                            horizontalAlign = HAlign.CENTER
+                                            color = Color.GREEN
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
