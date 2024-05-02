@@ -4,8 +4,6 @@ import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.command.annotations.*
 import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.command.interfaces.ICommand
-import me.codedbyyou.os.server.command.interfaces.impl.ConsoleCommandSender
-import me.codedbyyou.os.server.managers.GameRoomManager
 import me.codedbyyou.os.server.player.GamePlayer
 
 @Command("room", "r")
@@ -22,20 +20,77 @@ class RoomCommand : ICommand {
 
     @SubCommand("create", "c")
     @Description("Create a new room.")
-   // @Permission("room.create")
-    @Usage("/room create <name>")
-    fun createRoom(player: GamePlayer, name: String) {
+   @Permission("room.create")
+    @Usage("/room create <name> <minPlayers> <maxPlayers> <rounds>")
+    fun createRoom(player: GamePlayer, name: String, minPlayers: Int, maxPlayers: Int, rounds: Int) {
         Server.gameManager.addRoom(
             name,
-            "dsds",
-            4,
+            "Game Room",
+            rounds,
             "4",
-            5,
-            5,
-            5,
+            maxPlayers,
+            minPlayers,
+            0,
         )
         player.sendMessage("Room created: $name")
     }
 
+    @SubCommand("delete", "d")
+    @Description("Delete a room.")
+    @Permission("room.delete")
+    @Usage("/room delete <id>")
+    fun deleteRoom(sender: CommandSender, id: Int) {
+        Server.gameManager.removeRoom(id)
+        sender.sendMessage("Room deleted: $id")
+    }
+
+    @SubCommand("join", "j")
+    @Description("Join a room.")
+    @Permission("room.join")
+    @Usage("/room join <id>")
+    fun joinRoom(player: GamePlayer, id: Int) {
+        val room = Server.gameManager.getRoom(id)
+        if (room == null) {
+            player.sendMessage("Room not found.")
+            return
+        }
+        room.addPlayer(player)
+        player.sendMessage("Joined room: ${room.roomName}")
+    }
+
+    @SubCommand("list", "l")
+    @Description("List all rooms.")
+    @Permission("room.list")
+    @Usage("/room list")
+    fun listRooms(sender: CommandSender) {
+        val rooms = Server.gameManager.getRooms()
+        sender.sendMessage("Rooms:")
+        rooms.forEach {
+            sender.sendMessage("${it.roomNumber} - ${it.roomName} - ${it.roomStatus} - ${it.roomPlayerCount}/${it.roomMaxPlayers} players")
+        }
+    }
+
+    @SubCommand("clear", "cl")
+    @Description("Clears all rooms.")
+    @Permission("room.clear")
+    @Usage("/room clear")
+    fun clearRooms(sender: CommandSender) {
+        Server.gameManager.clearRooms()
+        sender.sendMessage("Rooms cleared, default room created.")
+    }
+
+    @SubCommand("leaderboard", "lb")
+    @Description("Shows the leaderboard of the room that the player is in")
+    @Permission("room.leaderboard")
+    @Usage("/room leaderboard")
+    fun leaderboard(player: GamePlayer) {
+        val room = Server.gameManager.getRoomByPlayer(player.uniqueName)
+        if (room == null) {
+            player.sendMessage("You are not in a room.")
+            return
+        }
+        player.sendMessage("Leaderboard:")
+        room.leaderboard()
+    }
 
 }
