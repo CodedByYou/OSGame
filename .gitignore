@@ -27,6 +27,8 @@ out/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
+.\idea\misc.xml
+.idea\runConfigurations\Main__jvm_.xml
 
 ### NetBeans ###
 /nbproject/private/
