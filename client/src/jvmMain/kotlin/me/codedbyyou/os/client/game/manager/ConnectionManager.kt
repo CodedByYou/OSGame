@@ -258,6 +258,7 @@ class ConnectionManager {
                     ROOM_FULL -> TODO()
                     ROOM_ALREADY_STARTED -> TODO()
                     NO_SUCH_PACKET -> TODO()
+                    GAME_ROUND_INFO -> TODO()
                 }
 
             }
