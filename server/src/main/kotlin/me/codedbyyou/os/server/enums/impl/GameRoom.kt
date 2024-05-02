@@ -4,8 +4,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.core.interfaces.player.Player
+import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.server.enums.Game
+import me.codedbyyou.os.server.player.GamePlayer
 import kotlin.math.abs
 
 /**
@@ -73,9 +76,12 @@ class GameRoom(
                 }
                 roomPlayers.forEach { player ->
                     // send packet of game start
+                    player as GamePlayer
+                    player.addPacket(PacketType.GAME_START.toPacket())
                     player.sendMessage("Game has started")
                     player.sendActionBar("Round 1")
                     // send packet of round start
+                    player.addPacket(PacketType.GAME_ROUND_START.toPacket())
                 }
                 roomStatus = RoomStatus.STARTED
             }
@@ -106,6 +112,8 @@ class GameRoom(
         val winners = currentGuesses.filter { it.value == closest }.keys
         winners.forEach { player ->
             player.sendMessage("You have won the round")
+            player as GamePlayer
+            player.addPacket(PacketType.GAME_ROUND_END.toPacket())
             roundWinners.add(player)
             roundResults[player]?.add(5) ?: run {
                 roundResults[player] = mutableListOf(5)
@@ -113,6 +121,8 @@ class GameRoom(
         }
         (roomPlayers.toSet() - winners.toSet()).forEach { player ->
             player.sendMessage("You have lost the round")
+            player as GamePlayer
+            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
             roundResults[player]?.add(4) ?: run {
                 roundResults[player] = mutableListOf(4)
             }
@@ -126,6 +136,11 @@ class GameRoom(
                 player.sendMessage("Two Thirds: $twoThirds")
                 player.sendMessage("Closest: $closest")
                 player.sendMessage("Winners: ${winners.joinToString { it.uniqueName }}")
+                player as GamePlayer
+                player.addPacket(PacketType.GAME_ROUND_INFO.toPacket(mapOf(
+
+                    
+                )))
             }
             currentGuesses.clear()
         }
@@ -140,6 +155,10 @@ class GameRoom(
             player.sendMessage("Position: ${index + 1}")
             player.sendMessage("Player: ${player.uniqueName}")
             player.sendMessage("Scores: ${scores.sum()}")
+            player as GamePlayer
+            player.addPacket(PacketType.GAME_PLAYER_INFO.toPacket(mapOf(
+                "position" to
+            )))
         }
     }
 
@@ -157,10 +176,16 @@ class GameRoom(
         val winners = roundWinners.groupBy { it }.maxByOrNull { it.value.size }!!.value
         winners?.forEach { player ->
             player.sendMessage("You have won the game")
+            player as GamePlayer
+            player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
+            player.addPacket(PacketType.GAME_END.toPacket())
         }
         (roomPlayers.toSet() - winners.toSet()).forEach { player ->
             player.sendMessage("You have lost the game")
+            player as GamePlayer
+            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
             player.sendActionBar("Game Over")
+            player.addPacket(PacketType.GAME_END.toPacket())
         }
     }
 }
