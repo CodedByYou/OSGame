@@ -75,9 +75,14 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             // for now, I will forward chat messages through here
                             if (!message.startsWith("/")) {
                                 val playerChatEvent = PlayerChatEvent(player as GamePlayer, message)
-                                Server.eventsManager.fireEvent(playerChatEvent)
-                                if(!playerChatEvent.isCancelled)
-                                    PlayerManager.broadcastMessage("[${nickname}]: ${playerChatEvent.message}", listOf(player!!.uniqueName))
+                                Server.eventsManager.fireEvent(playerChatEvent
+                                ) {
+                                    if (!playerChatEvent.isCancelled)
+                                        PlayerManager.broadcastMessage(
+                                            "[${nickname}]: ${playerChatEvent.message}",
+                                            listOf(player!!.uniqueName)
+                                        )
+                                }
                                 continue
                             }
 
@@ -127,7 +132,8 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             val message = data.substring(data.indexOf("]") + 1)
                             logger.info("Player $nickname has left the server: $message")
                             // fire room leave event if player is in a room and remove player from room
-                            // fire player leave event // move logic to the event
+                            // fire player leave event
+                            // move logic to the event
                             PlayerManager.broadcastMessage("$nickname has left the server")
                         }
 //                    PacketPrefix.PLAYER_INFO ->

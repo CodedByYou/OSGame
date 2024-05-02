@@ -11,6 +11,7 @@ import me.codedbyyou.os.server.events.manager.EventManager
 import me.codedbyyou.os.server.managers.GameRoomManager
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import me.codedbyyou.os.server.player.GamePlayerClientHandler
+import me.codedbyyou.os.server.player.listeners.PlayerEventListener
 import java.net.ServerSocket
 import java.util.Scanner
 import java.util.concurrent.Executors
@@ -49,6 +50,7 @@ object Server : OSGameServer() {
 
     init {
         CommandManager
+        initEvents()
         status = ServerStatus.STARTING
 
         if (isFirstRun) {
@@ -110,6 +112,10 @@ object Server : OSGameServer() {
             }
         }
         logger.info("Server initialized")
+    }
+
+    fun initEvents() {
+        eventsManager.register(PlayerEventListener())
     }
 
      /**

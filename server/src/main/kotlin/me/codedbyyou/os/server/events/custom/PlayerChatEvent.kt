@@ -3,7 +3,7 @@ package me.codedbyyou.os.server.events.custom
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.server.events.interfaces.Cancellable
 
-class PlayerChatEvent(player: Player, var message: String, name: String = "PlayerEvent",
+class PlayerChatEvent(player: Player, var message: String, name: String = "PlayerChatEvent",
                       override var isCancelled: Boolean = false
 ) : PlayerEvent(player, name),
     Cancellable {
