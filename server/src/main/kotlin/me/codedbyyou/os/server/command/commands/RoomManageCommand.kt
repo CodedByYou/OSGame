@@ -24,7 +24,9 @@ class RoomManageCommand : ICommand {
     @Description("Start the room")
     fun start(player: GamePlayer) {
         // get the game the player is in and start it
-        Server.gameManager.getRoomByPlayer(player.uniqueName)?
+        Server.gameManager.getRoomByPlayer(player.uniqueName)?.forceStart().also {
+            player.sendTitle("Room started.", "hooray!", 1f)
+        }
     }
 
 }
