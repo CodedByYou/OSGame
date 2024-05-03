@@ -10,7 +10,7 @@ class PlayerChatEvent(player: Player, var message: String, name: String = "Playe
 
 }
 
-//TODO( player guess event + cancelable )
+//DONE( player guess event + cancelable )
 //TODO( player server join event + cancelable )
 //TODO( player server leave event + cancelable)
 //TODO (player game join event + cancelable)

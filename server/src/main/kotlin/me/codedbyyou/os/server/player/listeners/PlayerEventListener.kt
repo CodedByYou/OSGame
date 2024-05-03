@@ -4,6 +4,7 @@ import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.events.annotations.EventHandler
 import me.codedbyyou.os.server.events.custom.PlayerChatEvent
 import me.codedbyyou.os.server.events.custom.PlayerGuessEvent
+import me.codedbyyou.os.server.events.custom.PlayerServerJoinEvent
 import me.codedbyyou.os.server.events.interfaces.EventListener
 
 class PlayerEventListener : EventListener {
@@ -13,6 +14,13 @@ class PlayerEventListener : EventListener {
     @EventHandler
     fun onPlayerGuess(event : PlayerGuessEvent) {
         Server.broadcast("Player ${event.player.uniqueName} guessed ${event.guess}")
+    }
+
+    fun onPlayerJoinServer(event : PlayerServerJoinEvent) {
+        Server.broadcast("Player ${event.player.uniqueName} has joined the server")
+    }
+    fun onPlayerWinning(event : PlayerServerJoinEvent) {
+        Server.broadcast("Player ${event.player.uniqueName} has won the game")
     }
 
     @EventHandler
