@@ -11,15 +11,13 @@ import com.lehaine.littlekt.util.signal
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.runtime.client.User
-import me.codedbyyou.os.client.game.scenes.LoginScene
-import me.codedbyyou.os.client.game.scenes.MenuScene
+import me.codedbyyou.os.client.game.scenes.ServerLobbyScene
 import me.codedbyyou.os.client.game.scenes.ServerMenuJoinScene
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType
-import java.net.NetworkInterface
 import kotlin.reflect.KClass
 
 
@@ -144,7 +142,7 @@ class RegisterMenuDialog(private val onSelection: suspend (KClass<out Scene>) ->
                                                 )
                                                 Client.user =
                                                     User(usernameField!!.text, ticket)
-                                                onSelection.invoke(LoginScene::class)
+                                                onSelection.invoke(ServerLobbyScene::class)
                                             }
 
                                             PacketType.SERVER_REGISTER_FAIL -> {

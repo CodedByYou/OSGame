@@ -26,13 +26,13 @@ import kotlin.time.Duration
  * @since 1.0
  * @version 1.0
  */
-class LoginScene(
+class ServerLobbyScene(
     private val onSelection: suspend (KClass<out Scene>) -> Unit,
     context: Context
 ) : Scene(context)
 {
     companion object {
-        var INSTANCE : LoginScene? = null
+        var INSTANCE : ServerLobbyScene? = null
             set(value) {
                 if (field != null) {
                     return
@@ -78,7 +78,7 @@ class LoginScene(
             serverList = serverInfoDialog()
             chatBox()
             muteBox()
-            info  = roomInfoDialog(context) {  }
+            info  = roomInfoDialog(onSelection, context) {}
             exitMenuSignal+= {
                 if (exitMenu != null) {
                     container!!.children.forEach {
@@ -111,7 +111,6 @@ class LoginScene(
     override fun Context.render(dt: Duration) {
         gl.clear(ClearBufferMask.COLOR_BUFFER_BIT)
         gl.clear(ClearBufferMask.DEPTH_BUFFER_BIT)
-
 
 
         text = VectorFont.TextBlock(

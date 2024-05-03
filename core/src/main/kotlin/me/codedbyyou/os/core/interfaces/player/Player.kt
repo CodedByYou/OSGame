@@ -1,7 +1,6 @@
 package me.codedbyyou.os.core.interfaces.player
 
 interface Player {
-
     val macAddress: String;
     val pseudoName : String
     val ticket : String
@@ -14,7 +13,7 @@ interface Player {
 
     fun sendMessage(message: String)
 
-    fun sendTitle(title: String, subtitle: String)
+    fun sendTitle(title: String, subtitle: String, duration: Float = 1f)
 
     fun sendActionBar(message: String)
 
@@ -23,4 +22,5 @@ interface Player {
     val uniqueName : String
         get() = "$pseudoName#$ticket"
 
+    fun sendSound(sound: String)
 }

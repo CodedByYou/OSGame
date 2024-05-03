@@ -1,9 +1,5 @@
 package me.codedbyyou.os.server.player
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.sendPacket
@@ -14,15 +10,11 @@ import me.codedbyyou.os.server.player.manager.PlayerManager
 import java.io.OutputStream
 import java.net.Socket
 import me.codedbyyou.os.core.interfaces.server.PacketType.*
-import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.core.models.serialized
 import me.codedbyyou.os.server.command.CommandManager
 import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
 import me.codedbyyou.os.server.events.custom.PlayerChatEvent
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
-import kotlin.math.log
 
 class GamePlayerClientHandler(val socket: Socket) : Runnable {
     private val logger = Server.logger
@@ -195,7 +187,25 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
 
                         GAME_CREATE -> TODO()
-                        GAME_JOIN -> TODO()
+                        GAME_JOIN -> {
+                            println("Joining game room")
+                            val roomNumber = packetData["room"].toString().toInt()
+                            println("Joining room $roomNumber")
+                            val room = Server.gameManager.getRoom(roomNumber)
+                            if (room != null) {
+                                if (room.isFull()) {
+                                    ROOM_FULL.sendPacket(output)
+                                    return
+                                }
+                                println("Room found!")
+                                room.addPlayer(player!!)
+                                gameRoomID = roomNumber
+                                GAME_JOIN.sendPacket(output)
+                            } else {
+                                println("No such room")
+                                NO_SUCH_ROOM.sendPacket(output)
+                            }
+                        }
                         GAME_LEAVE -> TODO()
                         GAME_CHAT -> TODO()
                         GAME_CHAT_PRIVATE -> TODO()

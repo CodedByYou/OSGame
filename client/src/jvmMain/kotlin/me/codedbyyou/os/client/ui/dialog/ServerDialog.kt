@@ -1,7 +1,6 @@
 package me.codedbyyou.os.client.ui.dialog
 
 import com.lehaine.littlekt.Scene
-import com.lehaine.littlekt.async.KT
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
 import com.lehaine.littlekt.graph.node.Node
@@ -11,24 +10,18 @@ import com.lehaine.littlekt.graph.node.ui.*
 import com.lehaine.littlekt.graphics.Color
 import com.lehaine.littlekt.util.Signal
 import com.lehaine.littlekt.util.signal
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import me.codedbyyou.os.client.game.Game
-import me.codedbyyou.os.client.game.enums.GameState
-import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.runtime.client.User
-import me.codedbyyou.os.client.game.scenes.LoginScene
+import me.codedbyyou.os.client.game.scenes.ServerLobbyScene
 import me.codedbyyou.os.client.game.scenes.ServerMenuJoinScene
 import me.codedbyyou.os.client.ping
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType
-import java.util.concurrent.Executors
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 
@@ -78,7 +71,7 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                                 chosenServer!!.psuedoName!!,
                                 chosenServer!!.ticket!!
                             )
-                        onSelection(LoginScene::class)
+                        onSelection(ServerLobbyScene::class)
                         return@launch
                     }
 

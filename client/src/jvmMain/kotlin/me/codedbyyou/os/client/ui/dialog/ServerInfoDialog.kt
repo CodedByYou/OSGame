@@ -1,6 +1,7 @@
 package me.codedbyyou.os.client.ui.dialog
 
 import com.lehaine.littlekt.Context
+import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.async.KT
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
@@ -22,6 +23,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.runtime.client.Client
+import me.codedbyyou.os.client.game.scenes.GameScene
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
@@ -29,10 +31,12 @@ import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.sendPacket
+import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.core.models.deserialized
 import java.awt.Container
 import javax.naming.ldap.Control
+import kotlin.reflect.KClass
 
 fun Node.serverInfoDialog(callback: ServerInfoDialog.() -> Unit = {}) = node (ServerInfoDialog(), callback)
 
@@ -216,9 +220,12 @@ class ChatBox() : PaddedContainer() {
 }
 
 
-fun Node.roomInfoDialog(context: Context, callback: RoomInfoDialog.() -> Unit = {}) = node(RoomInfoDialog(context), callback)
+fun Node.roomInfoDialog(onSelection: suspend (KClass<out Scene>) -> Unit,  context: Context, callback: RoomInfoDialog.() -> Unit = {}) = node(RoomInfoDialog(onSelection, context), callback)
 
-class RoomInfoDialog(val our: Context) : PaddedContainer(){
+class RoomInfoDialog(
+    private val onSelection: suspend (KClass<out Scene>) -> Unit,
+    val our: Context,
+) : PaddedContainer(){
     private val roomNameLabel: Label
     private val roomInfoContainer: ScrollContainer
     private var roomList: VBoxContainer
@@ -227,6 +234,7 @@ class RoomInfoDialog(val our: Context) : PaddedContainer(){
     private val thread = newSingleThreadAsyncContext()
     private val rooms: MutableList<GameRoomInfo> = mutableListOf()
     private val isRoomInfoDialogVisible = false
+
     init {
         anchor(layout = AnchorLayout.CENTER_RIGHT)
         padding(10)
@@ -354,12 +362,41 @@ class RoomInfoDialog(val our: Context) : PaddedContainer(){
                                         text = "Join"
                                         disabled = room.roomStatus != RoomStatus.NOT_STARTED
                                         onPressed += {
-//                                            Client.connectionManager.sendPacket(
-//                                                Packet(
-//                                                    PacketType.GAME_JOIN,
-//                                                    mapOf("roomID" to room.roomID)
-//                                                )
-//                                            )
+
+                                            KtScope.launch {
+                                                println("Joining room ${room.roomNumber}")
+                                                Client.connectionManager.sendPacket(
+                                                    PacketType.GAME_JOIN.toPacket(
+                                                        mapOf("room" to room.roomNumber)
+                                                    )
+                                                )
+                                                withContext(newSingleThreadAsyncContext()) {
+                                                    println("Waiting for response..")
+                                                    val packet = Client.connectionManager.gameChannel.receive()
+                                                    println("Received response..")
+                                                    println(packet.packetType.name)
+                                                    if (packet.packetType == PacketType.GAME_JOIN) {
+                                                        println("Joining room ${room.roomNumber}")
+                                                        KtScope.launch {
+                                                            onSelection.invoke(GameScene::class)
+                                                        }
+                                                    } else if (packet.packetType == PacketType.ROOM_FULL){
+                                                        println("Room is full") // better handling
+                                                        Client.connectionManager.sendPacket(
+                                                            PacketType.MESSAGE.toPacket(
+                                                                mapOf("message" to "Room is full")
+                                                            )
+                                                        )
+                                                    } else if (packet.packetType == PacketType.NO_SUCH_ROOM){
+                                                        println("No such room")
+                                                        Client.connectionManager.sendPacket(
+                                                            PacketType.MESSAGE.toPacket(
+                                                                mapOf("message" to "No such room")
+                                                            )
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
 

@@ -40,7 +40,7 @@ class GameRoom(
     override val roomMaxPlayers: Int,
     override val roomMinPlayers: Int,
     override val roomPlayers: MutableList<Player>,
-    override var roomPlayerCount: Int
+    roomPlayerCount: Int
 ) : Game {
 
     override val roundResults:  MutableMap<Player, MutableList<Int>> = mutableMapOf()
@@ -48,29 +48,53 @@ class GameRoom(
     override val spectators:    MutableList<Player> = mutableListOf()
     private  var currentRound   = 0
     private  val currentGuesses = mutableMapOf<Player, Int>()
-
+    override var roomPlayerCount: Int = roomPlayerCount
+        get() = roomPlayers.size + spectators.size
+    /**
+     * Checks if the room is full.
+     */
     fun isFull(): Boolean {
-        return roomPlayerCount == roomMaxPlayers
+        return roomPlayers.size == roomMaxPlayers
     }
 
+    /**
+     * Checks if the room is empty.
+     */
     fun turnToSpectator(player: Player) {
         roomPlayers.remove(player)
         spectators.add(player)
     }
 
+    /**
+     * Adds a player to the room.
+     * This function will add a player to the room.
+     * It will send a title message to the player that they have joined the room.
+     * @param player the player to add to the room.
+     */
     fun addPlayer(player: Player) {
         roomPlayers.add(player)
-        roomPlayerCount++
+        player as GamePlayer
+        player.sendTitle("Welcome to the game user", "Room: $roomName", 1f)
     }
 
-
+    /**
+     * Starts the game.
+     * This function will send a message to all players in the room that the game is starting.
+     * It will start a countdown of 3 seconds before the game starts where it will send a message to all room players.
+     * After the countdown, it will send a message to all room players that the game has started.
+     * It will then send a packet to all room players that the game has started.
+     * it will change the room status to STARTED.
+     * It will then start the first round.
+     * @see RoomStatus
+     * @see GamePlayer
+     */
     override suspend fun start() {
         coroutineScope {
             launch {
                 roomStatus = RoomStatus.STARTING
                 repeat(3) {
                     roomPlayers.forEach { player ->
-                        player.sendMessage("Game starting in ${3 - it} seconds")
+                        player.sendTitle("Game starting in ${3 - it} seconds", "Be ready!",1f)
                     }
                     Thread.sleep(1000)
                 }
@@ -88,6 +112,16 @@ class GameRoom(
         }
     }
 
+    /**
+     * the method to register a player's guess for the current round.
+     * if the player is a spectator, it will send a message to the player that they are a spectator.
+     * if the player has already guessed for this round, it will send a message to the player that they have already guessed.
+     * if all players have guessed for this round, it will end the round and calculate all results.
+     * @param player the player who is guessing
+     * @param guess the guess of the player
+     * @see endRound
+     * @see Player
+     */
     fun guess(player: Player, guess: Int) {
         if (player in spectators) {
             player.sendMessage("You are a spectator")
@@ -104,6 +138,20 @@ class GameRoom(
         }
     }
 
+
+    /**
+     * Ends the current round.
+     * This function will calculate the average of all guesses for the current round.
+     * It will then calculate two-thirds of the average.
+     * It will then find the closest guess to two-thirds of the average.
+     * It will then find the winners of the round.
+     * It will then send a message to all room players with the round information.
+     * It will then send a packet to all room players with the round information.
+     * It will then clear the current guesses.
+     * If the current round is the last round, it will end the game.
+     * @see GamePlayer
+     * @see PacketType
+     */
     private fun endRound() {
         currentRound++
         val guesses = currentGuesses.values
@@ -150,6 +198,12 @@ class GameRoom(
         }
     }
 
+    /**
+     * Displays the leaderboard of the game.
+     * This function will sort the players by their scores and display the leaderboard.
+     * It will send a message to each player with their position, name, and scores.
+     * Currently, it is sending a message to each player with their position, name, and scores.
+     */
     fun leaderboard() {
         val sorted = roundResults.toList().sortedByDescending { it.second.sum() }
         sorted.forEachIndexed { index, (player, scores) ->
@@ -168,14 +222,34 @@ class GameRoom(
         }
     }
 
+    /**
+     * Checks if the game has started.
+     * @return true if the game has started, false otherwise.
+     */
     override fun hasStarted(): Boolean {
         return roomStatus == RoomStatus.STARTED || roomStatus == RoomStatus.STARTING || hasEnded()
     }
 
+    /**
+     * Checks if the game has ended.
+     * @return true if the game has ended, false otherwise.
+     */
     override fun hasEnded(): Boolean {
         return roomStatus == RoomStatus.ENDED
     }
 
+    /**
+     * Ends the game.
+     * This function will send a message to all room players that the game has ended.
+     * It will then send a packet to all room players that the game has ended.
+     * It will then change the room status to ENDED.
+     * It will then send a message to the winners that they have won the game.
+     * It will then send a packet to the winners that they have won the game.
+     * It will then send a message to the losers that they have lost the game.
+     * It will then send a packet to the losers that they have lost the game.
+     * @see GamePlayer
+     * @see PacketType
+     */
     override fun end() {
         roomStatus = RoomStatus.ENDED
         // there can be multiple winners, if they are tied in rounds won

@@ -1,5 +1,6 @@
 package me.codedbyyou.os.client.game.manager
 
+import com.lehaine.littlekt.Game
 import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
@@ -10,6 +11,7 @@ import me.codedbyyou.os.client.ui.dialog.Server
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType.*
 import me.codedbyyou.os.core.interfaces.server.sendPacket
+import me.codedbyyou.os.core.models.Title
 import java.io.OutputStream
 import java.net.Socket
 import java.util.logging.Logger
@@ -163,7 +165,15 @@ class ConnectionManager {
                     }
 
                     ACTION_BAR -> TODO("Implement Action Bar Messages in the Game")
-                    TITLE -> TODO("Implement Title Messages in the Game")
+                    TITLE -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received title")
+                                TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), packetData["duration"].toString().toFloat()))
+                            }
+                        }
+
+                    }
                     KICK -> TODO("Implement Kick UI in the Client")
                     CLIENT_INFO -> TODO()
                     PLAYER_LEAVE -> TODO("Implement Player Leave in the Game")
@@ -193,6 +203,7 @@ class ConnectionManager {
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received player game join packet")
+                                println("Received player game join packet")
                                 gameChannel.send(packet)
                             }
                         }
@@ -259,6 +270,9 @@ class ConnectionManager {
                     ROOM_ALREADY_STARTED -> TODO()
                     NO_SUCH_PACKET -> TODO()
                     GAME_ROUND_INFO -> TODO()
+                    else -> {
+                        logger.warning("Unhandled packet type: $packetType")
+                    }
                 }
 
             }
