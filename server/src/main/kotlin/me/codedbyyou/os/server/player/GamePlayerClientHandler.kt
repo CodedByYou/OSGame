@@ -14,6 +14,7 @@ import me.codedbyyou.os.core.models.serialized
 import me.codedbyyou.os.server.command.CommandManager
 import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
 import me.codedbyyou.os.server.events.custom.PlayerChatEvent
+import me.codedbyyou.os.server.events.custom.PlayerGuessEvent
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
 
 class GamePlayerClientHandler(val socket: Socket) : Runnable {
@@ -170,7 +171,20 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
 
                         GAME_PLAYER_READY -> TODO()
-                        GAME_PLAYER_GUESS -> TODO()
+                        GAME_PLAYER_GUESS -> {
+                            // Extract the guess from the packet data
+                            val guess = packetData["guess"] as Int
+                            val room = player?.let { Server.gameManager.getRoomByPlayer(it.uniqueName) }
+
+                            // Fire the guess event
+                            val playerGuessEvent = PlayerGuessEvent(player as GamePlayer, guess)
+                            Server.eventsManager.fireEvent(playerGuessEvent) {
+                                if (room != null && player in room.roomPlayers) {
+                                    room.guess(player as GamePlayer, guess)
+                                }
+                            }
+                        }
+
                         GAME_PLAYER_WIN -> TODO()
                         GAME_PLAYER_LOSE -> TODO()
                         GAMES_LIST -> {

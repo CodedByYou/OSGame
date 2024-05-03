@@ -10,12 +10,11 @@ class PlayerChatEvent(player: Player, var message: String, name: String = "Playe
 
 }
 
-//TODO player guess event + cancelable
-//TODO player server join event + cancelable
-//TODO player server leave event + cancelable
-//TODO player game join event + cancelable
-//TODO player game leave event + cancelable
-//TODO player win event (player, winType.round || game )+ cancelable
-//TODO player lose event (player, winType.round || game ) + cancelable
-//TODO do the enums (add them to the enum folder)
-//
+//TODO( player guess event + cancelable )
+//TODO( player server join event + cancelable )
+//TODO( player server leave event + cancelable)
+//TODO (player game join event + cancelable)
+//TODO( player game leave event + cancelable)
+//TODO( player win event (player, winType.round || game )+ cancelable)
+//TODO (player lose event (player, winType.round || game ) + cancelable)
+//TODO (do the enums (add them to the enum folder))
