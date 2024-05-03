@@ -154,9 +154,16 @@ class GameRoom(
                     player.sendMessage("Game has started")
                     player.addPacket(PacketType.GAME_START.toPacket())
                     player.sendTitle("Game has started", "Good luck!", 1f)
-                    // send packet of round start
-                    player.addPacket(PacketType.GAME_ROUND_START.toPacket(mapOf("round" to currentRound, "chances"
-                    to roomPlayerChances[player]!!)))
+                    println("Game has started was sent to ${player.uniqueName}")
+                    player.addPacket(
+                        PacketType.GAME_ROUND_START
+                            .toPacket(
+                                mapOf("round" to currentRound,
+                                    "chances" to roomPlayerChances.getOrDefault(player, 0)
+                                )
+                            )
+                    )
+                    println("Round has started was sent to ${player.uniqueName}")
                 }
                 roomStatus = RoomStatus.STARTED
             }

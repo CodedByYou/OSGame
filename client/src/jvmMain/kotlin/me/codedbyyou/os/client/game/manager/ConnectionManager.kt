@@ -132,7 +132,7 @@ class ConnectionManager {
         output = socket.getOutputStream()
         val channelExecutor = newSingleThreadAsyncContext()
         val gameChannelExecutor = newSingleThreadAsyncContext()
-        val buffer = ByteArray(1024)
+        val buffer = ByteArray(4096)
         var read : Int
         try {
             while (input.read(buffer).also { read = it } != -1) {
@@ -195,6 +195,9 @@ class ConnectionManager {
                         }
                     }
                     GAME_ROUND_START -> {
+                        println("Received game round start!")
+                        println("Received game round start!")
+                        println("Received game round start!")
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received game round start")

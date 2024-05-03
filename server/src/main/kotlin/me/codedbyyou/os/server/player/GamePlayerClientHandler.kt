@@ -36,7 +36,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
         if (socket.isConnected){
             val input = socket.getInputStream()
             val output = socket.getOutputStream()
-            val buffer = ByteArray(1024)
+            val buffer = ByteArray(4096)
             var read : Int
 
             // To know where cpu is being used most in the code, i need to use a profiler, such as visualvm

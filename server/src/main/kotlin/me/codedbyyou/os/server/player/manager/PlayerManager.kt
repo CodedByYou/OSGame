@@ -46,7 +46,7 @@ object PlayerManager {
                             logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
                         }
                     }
-                    delay(50)
+                    delay(100)
                 }
             }
         }.start()
