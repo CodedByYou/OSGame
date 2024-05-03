@@ -158,8 +158,8 @@ class GameRoom(
                     player.addPacket(
                         PacketType.GAME_ROUND_START
                             .toPacket(
-                                mapOf("round" to currentRound,
-                                    "chances" to roomPlayerChances.getOrDefault(player, 0)
+                                mapOf(
+                                    "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString(),
                                 )
                             )
                     )

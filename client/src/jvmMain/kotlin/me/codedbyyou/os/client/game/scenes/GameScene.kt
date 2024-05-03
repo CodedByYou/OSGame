@@ -85,9 +85,11 @@ class GameScene(
                             gameStatus = "Game Ended"
                         }
                         PacketType.GAME_ROUND_START -> {
-                            println("Round Started")
-                            gameStatus = "Round ${packet.packetData["round"].toString()}"
-                            chancesLeftString = "Chances Left: ${packet.packetData["chances"].toString()}"
+                            val data = packet.packetData["data"].toString().split(":")
+                            val round = data[0]
+                            val chances = data[1]
+                            gameStatus = "Round $round"
+                            chancesLeftString = "Chances Left: $chances"
                             println("Chances Left: ${packet.packetData["chances"].toString()}")
                             guessingButton.enabled = true
                             guessBox.children.forEach {
