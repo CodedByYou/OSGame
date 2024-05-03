@@ -12,7 +12,7 @@ class GameRoomManager {
     private val rooms: MutableMap<Int, GameRoom> = mutableMapOf()
 
     init{
-        addRoom("Default Room", "Default Room Description", 3, "1.0", 10, 2, 0)
+        addRoom("Default Room", "Default Room Description", 3, "1.0", 10, 2, 0, 5)
     }
 
     fun addRoom(
@@ -22,10 +22,11 @@ class GameRoomManager {
         roomVersion: String,
         roomMaxPlayers: Int,
         roomMinPlayers: Int,
-        roomPlayerCount: Int
+        roomPlayerCount: Int,
+        roomChancesCount: Int
     ) {
         val roomID = ++roomId
-        rooms[roomID] = GameRoom(roomName, roomID, roomDescription, roundsNumber, RoomStatus.NOT_STARTED, roomVersion, roomMaxPlayers, roomMinPlayers, mutableListOf(),roomPlayerCount)
+        rooms[roomID] = GameRoom(roomName, roomID, roomDescription, roundsNumber, RoomStatus.NOT_STARTED, roomVersion, roomMaxPlayers, roomMinPlayers, mutableListOf(),roomPlayerCount,roomChancesCount)
     }
 
 
@@ -47,7 +48,7 @@ class GameRoomManager {
 
     fun clearRooms() {
         rooms.clear()
-        addRoom("Default Room", "Default Room Description", 3, "1.0", 10, 2, 0)
+        addRoom("Default Room", "Default Room Description", 3, "1.0", 10, 2, 0,5)
     }
 
     fun getRoomByPlayer(uniqueName: String): GameRoom? {

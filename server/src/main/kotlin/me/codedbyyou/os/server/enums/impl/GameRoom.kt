@@ -40,7 +40,8 @@ class GameRoom(
     override val roomMaxPlayers: Int,
     override val roomMinPlayers: Int,
     override val roomPlayers: MutableList<Player>,
-    roomPlayerCount: Int
+    roomPlayerCount: Int,
+    roomChancesCount: Int,
 ) : Game {
 
     override val roundResults:  MutableMap<Player, MutableList<Int>> = mutableMapOf()
@@ -48,6 +49,8 @@ class GameRoom(
     override val spectators:    MutableList<Player> = mutableListOf()
     private  var currentRound   = 0
     private  val currentGuesses = mutableMapOf<Player, Int>()
+    private  val roomPlayerChances = mutableMapOf<Player, Int>()
+    private val roomChances = roomChancesCount
     override var roomPlayerCount: Int = roomPlayerCount
         get() = roomPlayers.size + spectators.size
     /**
@@ -73,6 +76,7 @@ class GameRoom(
      */
     fun addPlayer(player: Player) {
         roomPlayers.add(player)
+        roomPlayerChances[player] = roomChances
         player as GamePlayer
         player.sendTitle("Welcome to the game user", "Room: $roomName", 1f)
     }
@@ -174,6 +178,12 @@ class GameRoom(
             player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
             roundResults[player]?.add(4) ?: run {
                 roundResults[player] = mutableListOf(4)
+            }
+            roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
+            if(roomPlayerChances[player] == 0) {
+                player.sendMessage("You have lost the game")
+                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
+                turnToSpectator(player)
             }
         }
         if (currentRound == roundsNumber) {
