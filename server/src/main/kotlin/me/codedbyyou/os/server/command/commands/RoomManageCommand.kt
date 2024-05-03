@@ -1,8 +1,10 @@
 package me.codedbyyou.os.server.command.commands
 
+import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.command.annotations.*
 import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.command.interfaces.ICommand
+import me.codedbyyou.os.server.player.GamePlayer
 
 //@Command("roommanage", "rm")//can be commented out
 @SubCommand("manage",  "m")
@@ -20,8 +22,9 @@ class RoomManageCommand : ICommand {
     @SubCommand("start", "s")
     @Usage("/room manage start")
     @Description("Start the room")
-    fun start(sender: CommandSender) {
-        sender.sendMessage("Starting room.")
+    fun start(player: GamePlayer) {
+        // get the game the player is in and start it
+        Server.gameManager.getRoomByPlayer(player.uniqueName)?
     }
 
 }

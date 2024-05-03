@@ -18,6 +18,7 @@ class PlayerEventListener : EventListener {
     fun onPlayerJoinServer(event : PlayerServerJoinEvent) {
         Server.broadcast("Player ${event.player.uniqueName} has joined the server")
     }
+
     fun onPlayerWinning(event : PlayerWinEvent) {
         val message = when (event.winType) {
             WinLoseType.ROUND -> "Player ${event.player.uniqueName} has won the round"

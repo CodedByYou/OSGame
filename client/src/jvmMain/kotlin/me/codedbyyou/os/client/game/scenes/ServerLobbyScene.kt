@@ -73,7 +73,6 @@ class ServerLobbyScene(
                     horizontalSizeFlags = Control.SizeFlag.FILL
                     verticalSizeFlags = Control.SizeFlag.FILL
                 }
-
             }
             serverList = serverInfoDialog()
             chatBox()

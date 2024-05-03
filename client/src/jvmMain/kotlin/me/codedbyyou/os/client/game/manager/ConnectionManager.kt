@@ -6,6 +6,7 @@ import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.ui.dialog.Server
 import me.codedbyyou.os.core.interfaces.server.Packet
@@ -23,7 +24,6 @@ class ConnectionManager {
     private var connection: Socket? = null
     private var connectionJob: Job? = null
     private var output: OutputStream? = null
-    private var lastActive = System.currentTimeMillis()
 
     // i want to change scene
     companion object {
@@ -67,6 +67,11 @@ class ConnectionManager {
      * serverInfo , i think for that it, it can use the tabChannel, and for that
      * it will be renamed to serverInfoChannel
      */
+
+    /**
+     * GameScene Channel
+     */
+    val gameSceneChannel : Channel<Packet> = Channel()
 
     /**
      * This function will be used to connect to the server
@@ -163,8 +168,6 @@ class ConnectionManager {
                             }
                         }
                     }
-
-                    ACTION_BAR -> TODO("Implement Action Bar Messages in the Game")
                     TITLE -> {
                         KtScope.launch {
                             withContext(channelExecutor){
@@ -172,23 +175,91 @@ class ConnectionManager {
                                 TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), packetData["duration"].toString().toFloat()))
                             }
                         }
-
                     }
-                    KICK -> TODO("Implement Kick UI in the Client")
+                    KICK -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received kick packet")
+                                TitleManager.addTitle(Title("You have been kicked from the server", packetData["reason"].toString(), 5f))
+                            }
+                        }
+                    }
                     CLIENT_INFO -> TODO()
                     PLAYER_LEAVE -> TODO("Implement Player Leave in the Game")
-                    GAME_START -> TODO()
-                    GAME_ROUND_START -> TODO()
-                    GAME_ROUND_END -> TODO()
-                    GAME_END -> TODO()
-                    ROOM_INFO -> TODO()
-                    PLAYER_ROOM_JOIN -> TODO()
-                    GAME_PLAYER_LEAVE -> TODO()
+                    GAME_START -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received game start")
+                                gameSceneChannel.send(packet)
+                            }
+                        }
+                    }
+                    GAME_ROUND_START -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received game round start")
+                                gameSceneChannel.send(packet)
+                            }
+                        }
+                    }
+                    GAME_ROUND_END -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received game round end")
+                                gameSceneChannel.send(packet)
+                            }
+                        }
+                    }
+                    GAME_END -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received game end")
+                                gameSceneChannel.send(packet)
+                            }
+                        }
+                    }
+                    ROOM_INFO -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received room info")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
+                    PLAYER_ROOM_JOIN -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                Client.gameState = GameState.PLAYING
+                            }
+                        }
+                    }
+                    GAME_PLAYER_LEAVE -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received player leave packet")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
                     GAME_PLAYER_INFO -> TODO()
                     GAME_PLAYER_READY -> TODO()
                     GAME_PLAYER_GUESS -> TODO()
-                    GAME_PLAYER_WIN -> TODO()
-                    GAME_PLAYER_LOSE -> TODO()
+                    GAME_PLAYER_WIN -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received player win packet")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
+                    GAME_PLAYER_LOSE -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received player lose packet")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
                     GAMES_LIST -> {
                         logger.info("Recieved games list")
                         KtScope.launch {
@@ -264,12 +335,40 @@ class ConnectionManager {
                             }
                         }
                     }
-                    NO_SUCH_ROOM -> TODO()
+                    NO_SUCH_ROOM -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.warning("No such room")
+                                gameChannel.send(packet)
+                            }
+                        }
+                    }
                     NO_SUCH_PLAYER -> TODO()
-                    ROOM_FULL -> TODO()
-                    ROOM_ALREADY_STARTED -> TODO()
+                    ROOM_FULL -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.warning("Room is full")
+                                TitleManager.addTitle(Title("Room is full", "Please try again later", 5f))
+                            }
+                        }
+                    }
+                    ROOM_ALREADY_STARTED -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.warning("Room already started")
+                                TitleManager.addTitle(Title("Room already started", "Please try again later", 5f))
+                            }
+                        }
+                    }
                     NO_SUCH_PACKET -> TODO()
-                    GAME_ROUND_INFO -> TODO()
+                    GAME_ROUND_INFO -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received game round info")
+                                gameSceneChannel.send(packet)
+                            }
+                        }
+                    }
                     else -> {
                         logger.warning("Unhandled packet type: $packetType")
                     }

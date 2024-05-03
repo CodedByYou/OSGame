@@ -1,5 +1,6 @@
 package me.codedbyyou.os.server.enums.impl
 
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.core.enums.RoomStatus
@@ -10,6 +11,7 @@ import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.server.enums.Game
 import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.player.GamePlayer
+import java.util.concurrent.Executors
 import kotlin.math.abs
 
 /**
@@ -61,6 +63,14 @@ class GameRoom(
         return roomPlayers.size == roomMaxPlayers
     }
 
+    fun forceStart() {
+        if (roomPlayers.size >= roomMinPlayers) {
+            GlobalScope.launch {
+                start()
+            }
+        }
+    }
+
     /**
      * Checks if the room is empty.
      */
@@ -80,6 +90,41 @@ class GameRoom(
         roomPlayerChances[player] = roomChances
         player as GamePlayer
         player.sendTitle("Welcome to the game user", "Room: $roomName", 1f)
+    }
+
+    /**
+     * Removes a player from the room.
+     * This function will remove a player from the room.
+     * It will send a title message to the player that they have left the room.
+     * @param player the player to remove from the room.
+     * @see GamePlayer
+     */
+    fun removePlayer(player: Player) {
+        roomPlayers.remove(player)
+        spectators.remove(player)
+        player as GamePlayer
+        player.sendTitle("You have left the room", "Goodbye!", 1f)
+        roomPlayers.forEach { roomPlayer ->
+            roomPlayer.sendMessage("Player ${player.uniqueName} has left the room")
+            roomPlayer as GamePlayer
+            roomPlayer.addPacket(PacketType.GAME_PLAYER_LEAVE.toPacket(mapOf("player" to player.uniqueName)))
+        }
+        spectators.forEach() { spectator ->
+            spectator.sendMessage("Player ${player.uniqueName} has left the room")
+            spectator as GamePlayer
+            spectator.addPacket(PacketType.GAME_PLAYER_LEAVE.toPacket(mapOf("player" to player.uniqueName)))
+        }
+
+        if (roomPlayers.size == 1 && roomStatus == RoomStatus.STARTED) {
+            end()
+            roomStatus = RoomStatus.NOT_STARTED
+            return
+        }
+
+        if (roomPlayers.isEmpty()) {
+            roomStatus = RoomStatus.NOT_STARTED
+        }
+
     }
 
     /**
@@ -108,9 +153,10 @@ class GameRoom(
                     player as GamePlayer
                     player.sendMessage("Game has started")
                     player.addPacket(PacketType.GAME_START.toPacket())
-                    player.sendActionBar("Round 1")
+                    player.sendTitle("Game has started", "Good luck!", 1f)
                     // send packet of round start
-                    player.addPacket(PacketType.GAME_ROUND_START.toPacket())
+                    player.addPacket(PacketType.GAME_ROUND_START.toPacket(mapOf("round" to currentRound, "chances"
+                    to roomPlayerChances[player]!!)))
                 }
                 roomStatus = RoomStatus.STARTED
             }
@@ -156,6 +202,7 @@ class GameRoom(
      * If the current round is the last round, it will end the game.
      * @see GamePlayer
      * @see PacketType
+     * @see end
      */
     private fun endRound() {
         currentRound++
@@ -168,6 +215,8 @@ class GameRoom(
             player.sendMessage("You have won the round")
             player as GamePlayer
             player.addPacket(PacketType.GAME_ROUND_END.toPacket())
+            player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket(mapOf("type" to "round")))
+            player.sendTitle("You have won the round", "Congratulations", 1f)
             roundWinners.add(player)
             roundResults[player]?.add(5) ?: run {
                 roundResults[player] = mutableListOf(5)
@@ -176,8 +225,8 @@ class GameRoom(
         (roomPlayers.toSet() - winners.toSet()).forEach { player ->
             player.sendMessage("You have lost the round")
             player as GamePlayer
-//            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
-            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to WinLoseType.ROUND)))
+            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
+            player.sendTitle("You have lost the round", "Better luck next time", 1f)
 
             roundResults[player]?.add(4) ?: run {
                 roundResults[player] = mutableListOf(4)
@@ -185,9 +234,7 @@ class GameRoom(
             roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
             if(roomPlayerChances[player] == 0) {
                 player.sendMessage("You have lost the game")
-//                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
-                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to WinLoseType.GAME)))
-
+                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
                 turnToSpectator(player)
             }
         }
@@ -269,9 +316,10 @@ class GameRoom(
         roomStatus = RoomStatus.ENDED
         // there can be multiple winners, if they are tied in rounds won
         val winners = roundWinners.groupBy { it }.maxByOrNull { it.value.size }!!.value
-        winners?.forEach { player ->
+        winners.forEach { player ->
             player.sendMessage("You have won the game")
             player as GamePlayer
+            player.sendTitle("Game Over", "You have won the game, legend!", 1f)
             player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
             player.addPacket(PacketType.GAME_END.toPacket())
         }
@@ -279,7 +327,7 @@ class GameRoom(
             player.sendMessage("You have lost the game")
             player as GamePlayer
             player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
-            player.sendActionBar("Game Over")
+            player.sendTitle("Game Over", "You have lost the game", 1f)
             player.addPacket(PacketType.GAME_END.toPacket())
         }
     }

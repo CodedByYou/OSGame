@@ -124,8 +124,7 @@ class Game(context: Context) : Game<Scene>(context) {
         ))
 
 
-
-        setScene<MenuScene>()
+        setScene<GameScene>()
 //        setScene<LoginScene>()
 //        setScene<ServerMenuJoinScene>()
 //        ConnectionManager.serverScreenCallBack = {

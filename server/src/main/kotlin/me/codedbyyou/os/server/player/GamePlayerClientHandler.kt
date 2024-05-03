@@ -134,7 +134,19 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
 //                    PacketPrefix.PLAYER_INFO ->
                         ROOM_INFO -> {
-                            // send back game info
+                            val message = data.substring(data.indexOf("]") + 1)
+                            val roomNumber = message.toInt()
+                            val room = Server.gameManager.getRoom(roomNumber)
+                            if (room != null) {
+                                ROOM_INFO
+                                    .toPacket(
+                                        mapOf(
+                                            "room" to room.toGameRoomInfo()
+                                        )
+                                    ).sendPacket(output)
+                            } else {
+                                NO_SUCH_ROOM.sendPacket(output)
+                            }
                         }
 
                         PLAYER_ROOM_JOIN -> {
@@ -152,8 +164,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
 
                                 room.addPlayer(player!!)
                                 gameRoomID = gameID
-                                // sending back same packet prefix as success
-                                output.write("[${PLAYER_ROOM_JOIN}]".toByteArray())
                                 PLAYER_ROOM_JOIN
                                     .sendPacket(output)
                             } else {
@@ -172,7 +182,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         GAME_PLAYER_INFO -> {
                             // send back player info in the game
                         }
-
                         GAME_PLAYER_READY -> TODO()
                         GAME_PLAYER_GUESS -> {
                             // Extract the guess from the packet data
@@ -187,19 +196,19 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                 }
                             }
                         }
-
-                        GAME_PLAYER_WIN -> {
-                                val winType = packetData["type"] as WinLoseType
-                                val playerWinEvent = PlayerWinEvent(player as GamePlayer,winType)
-                                Server.eventsManager.fireEvent(playerWinEvent)
-
-                        }
-                        GAME_PLAYER_LOSE -> {
-                            val loseType = packetData["type"] as WinLoseType
-                            val playerLoseEvent = PlayerLoseEvent(player as GamePlayer, loseType)
-                            Server.eventsManager.fireEvent(playerLoseEvent)
-                            TODO()
-                        }
+                        // fire event in the correct place
+//                        GAME_PLAYER_WIN -> {
+//                                val winType = packetData["type"] as WinLoseType
+//                                val playerWinEvent = PlayerWinEvent(player as GamePlayer,winType)
+//                                Server.eventsManager.fireEvent(playerWinEvent)
+//
+//                        }
+//                        GAME_PLAYER_LOSE -> {
+//                            val loseType = packetData["type"] as WinLoseType
+//                            val playerLoseEvent = PlayerLoseEvent(player as GamePlayer, loseType)
+//                            Server.eventsManager.fireEvent(playerLoseEvent)
+//                            TODO()
+//                        }
                         GAMES_LIST -> {
                             logger.info("Preparing game list")
                             val games = Server.gameManager.getRooms()
@@ -233,7 +242,17 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                 NO_SUCH_ROOM.sendPacket(output)
                             }
                         }
-                        GAME_LEAVE -> TODO()
+                        GAME_LEAVE -> {
+                            val roomNumber = packetData["room"].toString().toInt()
+                            val room = Server.gameManager.getRoom(roomNumber)
+                            if (room != null) {
+                                room.removePlayer(player!!)
+                                gameRoomID = -1
+                                GAME_LEAVE.sendPacket(output)
+                            } else {
+                                NO_SUCH_ROOM.sendPacket(output)
+                            }
+                        }
                         GAME_CHAT -> TODO()
                         GAME_CHAT_PRIVATE -> TODO()
                         GAME_CHAT_PUBLIC -> TODO()
