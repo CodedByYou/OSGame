@@ -76,11 +76,6 @@ class GameScene(
                 if (Client.gameState == GameState.PLAYING){
                     val packet = Client.connectionManager.gameSceneChannel.receive()
                     println("Received Packet ${packet.packetType}")
-                    // After first packet, it doesnt receive any more packets
-                    // Answer: because the channel is closed
-                    // how do i check if the channel is closed?
-                    // Answer: you can check if the channel is closed by using the isClosedForReceive property
-
                     when(packet.packetType){
                         PacketType.GAME_START -> {
                             gameStatus = "Game Started"

@@ -152,7 +152,7 @@ class GameRoom(
                     // send packet of game start
                     player as GamePlayer
                     player.sendMessage("Game has started")
-                    player.addPacket(PacketType.GAME_START.toPacket())
+//                    player.addPacket(PacketType.GAME_START.toPacket())
                     player.sendTitle("Game has started", "Good luck!", 1f)
                     println("Game has started was sent to ${player.uniqueName}")
                     player.addPacket(
