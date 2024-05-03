@@ -8,6 +8,7 @@ import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.server.enums.Game
+import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.player.GamePlayer
 import kotlin.math.abs
 
@@ -175,14 +176,18 @@ class GameRoom(
         (roomPlayers.toSet() - winners.toSet()).forEach { player ->
             player.sendMessage("You have lost the round")
             player as GamePlayer
-            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
+//            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
+            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to WinLoseType.ROUND)))
+
             roundResults[player]?.add(4) ?: run {
                 roundResults[player] = mutableListOf(4)
             }
             roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
             if(roomPlayerChances[player] == 0) {
                 player.sendMessage("You have lost the game")
-                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
+//                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
+                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to WinLoseType.GAME)))
+
                 turnToSpectator(player)
             }
         }

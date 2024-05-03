@@ -1,10 +1,9 @@
 package me.codedbyyou.os.server.player.listeners
 
 import me.codedbyyou.os.server.Server
+import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.events.annotations.EventHandler
-import me.codedbyyou.os.server.events.custom.PlayerChatEvent
-import me.codedbyyou.os.server.events.custom.PlayerGuessEvent
-import me.codedbyyou.os.server.events.custom.PlayerServerJoinEvent
+import me.codedbyyou.os.server.events.custom.*
 import me.codedbyyou.os.server.events.interfaces.EventListener
 
 class PlayerEventListener : EventListener {
@@ -19,8 +18,19 @@ class PlayerEventListener : EventListener {
     fun onPlayerJoinServer(event : PlayerServerJoinEvent) {
         Server.broadcast("Player ${event.player.uniqueName} has joined the server")
     }
-    fun onPlayerWinning(event : PlayerServerJoinEvent) {
-        Server.broadcast("Player ${event.player.uniqueName} has won the game")
+    fun onPlayerWinning(event : PlayerWinEvent) {
+        val message = when (event.winType) {
+            WinLoseType.ROUND -> "Player ${event.player.uniqueName} has won the round"
+            WinLoseType.GAME -> "Player ${event.player.uniqueName} has won the game"
+        }
+        Server.broadcast(message)
+    }
+    fun onPlayerLosing(event : PlayerLoseEvent) {
+        val message = when (event.loseType) {
+            WinLoseType.ROUND -> "Player ${event.player.uniqueName} has lost the round"
+            WinLoseType.GAME -> "Player ${event.player.uniqueName} has lost the game"
+        }
+        Server.broadcast(message)
     }
 
     @EventHandler

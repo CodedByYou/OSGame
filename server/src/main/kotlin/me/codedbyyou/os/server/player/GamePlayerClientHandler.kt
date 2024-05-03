@@ -15,7 +15,9 @@ import me.codedbyyou.os.server.command.CommandManager
 import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
 import me.codedbyyou.os.server.events.custom.PlayerChatEvent
 import me.codedbyyou.os.server.events.custom.PlayerGuessEvent
+import me.codedbyyou.os.server.events.custom.PlayerLoseEvent
 import me.codedbyyou.os.server.events.custom.PlayerWinEvent
+import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
 
 class GamePlayerClientHandler(val socket: Socket) : Runnable {
@@ -187,11 +189,17 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
 
                         GAME_PLAYER_WIN -> {
-                                val playerWinEvent = PlayerWinEvent(player as GamePlayer, )
+                                val winType = packetData["type"] as WinLoseType
+                                val playerWinEvent = PlayerWinEvent(player as GamePlayer,winType)
                                 Server.eventsManager.fireEvent(playerWinEvent)
 
                         }
-                        GAME_PLAYER_LOSE -> TODO()
+                        GAME_PLAYER_LOSE -> {
+                            val loseType = packetData["type"] as WinLoseType
+                            val playerLoseEvent = PlayerLoseEvent(player as GamePlayer, loseType)
+                            Server.eventsManager.fireEvent(playerLoseEvent)
+                            TODO()
+                        }
                         GAMES_LIST -> {
                             logger.info("Preparing game list")
                             val games = Server.gameManager.getRooms()
