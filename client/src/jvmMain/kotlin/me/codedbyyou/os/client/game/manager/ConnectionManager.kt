@@ -229,6 +229,7 @@ class ConnectionManager {
                     PLAYER_ROOM_JOIN -> {
                         KtScope.launch {
                             withContext(channelExecutor){
+                                println("Received player room join packet")
                                 Client.gameState = GameState.PLAYING
                             }
                         }
@@ -275,6 +276,7 @@ class ConnectionManager {
                             withContext(channelExecutor){
                                 logger.info("Received player game join packet")
                                 println("Received player game join packet")
+                                Client.gameState = GameState.PLAYING
                                 gameChannel.send(packet)
                             }
                         }

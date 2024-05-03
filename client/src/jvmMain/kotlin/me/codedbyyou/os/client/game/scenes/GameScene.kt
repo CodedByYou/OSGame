@@ -67,24 +67,28 @@ class GameScene(
     private var chancesLeftString = "Chances Left: 5"
 
     init {
-        // create a coroutine scope that will always be active
+        // why is this not running?
+        // answer: because the game is not started yet
+
         KtScope.launch {
 
             while (true){
                 if (Client.gameState == GameState.PLAYING){
-
                     val packet = Client.connectionManager.gameSceneChannel.receive()
+                    println("Received Packet ${packet.packetType}")
                     when(packet.packetType){
                         PacketType.GAME_START -> {
                             gameStatus = "Game Started"
+                            println("Game Started")
                         }
                         PacketType.GAME_END -> {
                             gameStatus = "Game Ended"
                         }
                         PacketType.GAME_ROUND_START -> {
+                            println("Round Started")
                             gameStatus = "Round ${packet.packetData["round"].toString()}"
                             chancesLeftString = "Chances Left: ${packet.packetData["chances"].toString()}"
-
+                            println("Chances Left: ${packet.packetData["chances"].toString()}")
                             guessingButton.enabled = true
                             guessBox.children.forEach {
                                 if (it is LineEdit){
