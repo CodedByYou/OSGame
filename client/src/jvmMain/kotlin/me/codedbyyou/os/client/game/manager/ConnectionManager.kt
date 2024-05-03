@@ -172,7 +172,7 @@ class ConnectionManager {
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received title")
-                                TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), packetData["duration"].toString().toFloat()))
+                                TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), 1f))
                             }
                         }
                     }
