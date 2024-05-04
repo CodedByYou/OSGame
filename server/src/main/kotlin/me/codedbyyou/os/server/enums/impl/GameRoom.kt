@@ -1,9 +1,6 @@
 package me.codedbyyou.os.server.enums.impl
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.PacketType
@@ -12,6 +9,7 @@ import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.server.enums.Game
 import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.player.GamePlayer
+import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
 
@@ -150,23 +148,24 @@ class GameRoom(
                     delay(1000)
                 }
                 delay(1000)
-
                 roomPlayers.forEach { player ->
-                    // send packet of game start
-                    player as GamePlayer
-                    player.sendMessage("Game has started")
-                    player.addPacket(PacketType.GAME_START.toPacket())
-                    player.sendTitle("Game has started", "Good luck!", 1f)
-                    println("Game has started was sent to ${player.uniqueName}")
-                    player.addPacket( // sometimes 1 in a few reachers a player, but most of the time it doesnt
-                        PacketType.GAME_ROUND_START
-                            .toPacket(
-                                mapOf(
-                                    "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString(),
+                    Executors.newSingleThreadExecutor().execute {
+                        player as GamePlayer
+                        player.sendMessage("Game has started")
+                        player.addPacket(PacketType.GAME_START.toPacket())
+                        player.sendTitle("Game has started", "Good luck!", 1f)
+                        println("Game has started was sent to ${player.uniqueName}")
+                        sleep(1000)
+                        player.addPacket(
+                            PacketType.GAME_ROUND_START
+                                .toPacket(
+                                    mapOf(
+                                        "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString(),
+                                    )
                                 )
-                            )
-                    )
-                    println("Round has started was sent to ${player.uniqueName}")
+                        )
+                        println("Round has started was sent to ${player.uniqueName}")
+                    }
                 }
                 roomStatus = RoomStatus.STARTED
             }
