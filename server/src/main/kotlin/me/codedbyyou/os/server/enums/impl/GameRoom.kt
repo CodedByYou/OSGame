@@ -361,7 +361,10 @@ class GameRoom(
      */
     override fun end() {
         roomStatus = RoomStatus.ENDED
-
+        val sorted = roundResults.toList().sortedByDescending { it.second.sum() }
+        val leaderboard = sorted.joinToString { "${it.first.uniqueName}:${it.second.sum()}" }
+        println(sorted)
+        println(leaderboard)
         val coroutineScope = CoroutineScope(Dispatchers.Default)
 
         coroutineScope.launch {
@@ -375,7 +378,11 @@ class GameRoom(
                     player.sendTitle("Game Over", "You have won the game, legend!", 1f)
                     player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
                     sleep(1000)
-                    player.addPacket(PacketType.GAME_END.toPacket())
+                    player.addPacket(PacketType.GAME_END.toPacket(
+                        mapOf(
+                            "leaderboard" to leaderboard
+                        )
+                    ))
                 }
             }
 
@@ -389,12 +396,17 @@ class GameRoom(
                     player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
                     player.sendTitle("Game Over", "You have lost the game", 1f)
                     sleep(1000)
-                    player.addPacket(PacketType.GAME_END.toPacket())
+                    player.addPacket(PacketType.GAME_END.toPacket(
+                        mapOf(
+                            "leaderboard" to leaderboard
+                        )
+                    ))
                 }
             }
 
             // Await all tasks to complete
-            delay(1000) // Adding a delay between sending packets
+            delay(5000)
+            roomStatus = RoomStatus.NOT_STARTED
         }
     }
 

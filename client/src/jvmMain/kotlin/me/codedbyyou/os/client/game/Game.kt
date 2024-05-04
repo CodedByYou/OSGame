@@ -136,7 +136,6 @@ class Game(context: Context) : Game<Scene>(context) {
         val elapsedTime = System.currentTimeMillis() - titleManager.getLastTitleTime()
         val fadeDuration = title.duration * 1000 // Convert fade duration to milliseconds
 
-
         val gamma =  elapsedTime / fadeDuration
         if(title.text != ""){
             vectorFont?.queue(

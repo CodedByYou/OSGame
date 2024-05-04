@@ -64,14 +64,12 @@ class GameScene(
     private var exitMenu : Node? = null
     private var textureRect : TextureRect? = null
     private var gameStatus = "Starting Soon"
-    private var chancesLeftString = "Chances Left: 5"
+    private var chancesLeftString = ""
+    private var leadboardData = mutableListOf<Pair<String, String>>()
+    private val loadLeaderboardSignal = Signal()
 
     init {
-        // why is this not running?
-        // answer: because the game is not started yet
-
         KtScope.launch {
-
             while (true){
                 if (Client.gameState == GameState.PLAYING){
                     val packet = Client.connectionManager.gameSceneChannel.receive()
@@ -79,11 +77,19 @@ class GameScene(
                     when(packet.packetType){
                         PacketType.GAME_START -> {
                             gameStatus = "Game Started"
-                            println("Game Started")
                         }
                         PacketType.GAME_END -> {
                             leaderboard.enabled = true
                             leaderboard.visible = true
+                            val data = packet.packetData["leaderboard"].toString().split(",")
+                            leadboardData.clear()
+                            data.forEach {
+                                println(data)
+                                val split = it.split(":")
+                                leadboardData.add(Pair(split[0], split[1]))
+                            }
+
+                            loadLeaderboardSignal.emit()
                             gameStatus = "Game Ended"
                         }
                         PacketType.GAME_ROUND_START -> {
@@ -92,12 +98,10 @@ class GameScene(
                             val chances = data[1]
                             gameStatus = "Round $round"
                             chancesLeftString = "Chances Left: $chances"
-                            println(chancesLeftString)
                             guessingButton.enabled = true
                             guessingButton.visible = true
                         }
                         PacketType.GAME_ROUND_END -> {
-
                             gameStatus = "Round Ended"
                         }
                         PacketType.GAME_PLAYER_GUESS -> {
@@ -118,6 +122,7 @@ class GameScene(
     private val leaderboard : PanelContainer
     private val guessBox : PanelContainer
     private val guessingButton : Button
+
     val graph = sceneGraph(context, batch = myBatch) {
         viewport {
             viewport  = extendViewport
@@ -206,6 +211,48 @@ class GameScene(
                     exitMenu = container?.inGameMenuDialog(onSelection) {}
                 }
             }
+            loadLeaderboardSignal += {
+                leaderboard.apply {
+                    destroyAllChildren()
+                    column {
+                        separation = 10
+                        label {
+                            text = "Leaderboard"
+                            fontScale = Vec2f(1.5f, 1.5f)
+                            horizontalAlign = HAlign.LEFT
+                        }
+
+                        column{
+                            separation = 20
+                            column {
+                                separation = 10
+                                label {
+                                    text = "Player"
+                                    horizontalAlign = HAlign.LEFT
+                                }
+                                label {
+                                    text = "Score"
+                                    horizontalAlign = HAlign.LEFT
+                                }
+                            }
+                        }
+
+                        leadboardData.forEach {
+                            column {
+                                separation = 10
+                                label {
+                                    text = it.first
+                                    horizontalAlign = HAlign.LEFT
+                                }
+                                label {
+                                    text = it.second
+                                    horizontalAlign = HAlign.LEFT
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
     }
@@ -224,7 +271,7 @@ class GameScene(
 
         text = VectorFont.TextBlock(
             10f,
-            25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.RED)))
+            25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.DARK_CYAN)))
 
         extendViewport.update(graphics.width, graphics.height, context, true)
         if (input.isKeyJustPressed(com.lehaine.littlekt.input.Key.ESCAPE)) {
@@ -245,16 +292,15 @@ class GameScene(
         val roomNameAndCode = "Ask your friends to join Room: default#0"
         val gameStatus = VectorFont.TextBlock(
             extendViewport.camera.virtualWidth/2f - this@GameScene.gameStatus.length*11.5f,
-            40f, mutableListOf(VectorFont.Text(this@GameScene.gameStatus,48, Color.DARK_RED)))
+            40f, mutableListOf(VectorFont.Text(this@GameScene.gameStatus,48, Color.DARK_GRAY)))
         val subGameStatus = VectorFont.TextBlock(
             extendViewport.camera.virtualWidth/2f - roomNameAndCode.length*5.5f,
-            80f, mutableListOf(VectorFont.Text(roomNameAndCode,24, Color.RED)))
-        // this shall be under the client name
+            80f, mutableListOf(VectorFont.Text(roomNameAndCode,24, Color.GRAY)))
         val chancesLeftVC = VectorFont.TextBlock(
             10f,
             50f, mutableListOf(VectorFont.Text(
                 chancesLeftString
-                ,24, Color.RED)))
+                ,24, Color.CYAN)))
         vectorFont.queue(text)
         vectorFont.queue(gameStatus)
         vectorFont.queue(subGameStatus)
