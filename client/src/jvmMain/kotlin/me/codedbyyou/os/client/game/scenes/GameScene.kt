@@ -201,7 +201,7 @@ class GameScene(
                     container!!.removeChild(exitMenu!!)
                     exitMenu = null
                 }else {
-                    exitMenu = container!!.inGameMenuDialog(onSelection) {}
+                    exitMenu = container?.inGameMenuDialog(onSelection) {}
                 }
             }
         }
