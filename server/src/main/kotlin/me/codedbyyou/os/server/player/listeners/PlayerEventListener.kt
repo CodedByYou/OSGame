@@ -12,7 +12,7 @@ class PlayerEventListener : EventListener {
     private val censoredWords = listOf("ketchup", "no bonus", "hard exam")
     @EventHandler
     fun onPlayerGuess(event : PlayerGuessEvent) {
-        Server.broadcast("Player ${event.player.uniqueName} guessed ${event.guess}")
+//        Server.broadcast("Player ${event.player.uniqueName} guessed ${event.guess}")
     }
 
     fun onPlayerJoinServer(event : PlayerServerJoinEvent) {

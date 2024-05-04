@@ -185,13 +185,16 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             // Extract the guess from the packet data
                             val guess = packetData["guess"] as Int
                             val room = player?.let { Server.gameManager.getRoomByPlayer(it.uniqueName) }
-
+                            println("[CLIENT_HANDLER] is room null? ${room == null}")
+                            println("[CLIENT_HANDLER] Player $nickname guessed $guess")
                             // Fire the guess event
                             val playerGuessEvent = PlayerGuessEvent(player as GamePlayer, guess)
+                            println("[CLIENT_HANDLER] Firing PlayerGuessEvent")
                             Server.eventsManager.fireEvent(playerGuessEvent) {
                                 if (room != null && player in room.roomPlayers) {
                                     room.guess(player as GamePlayer, guess)
                                 }
+                                println("[CLIENT_HANDLER] PlayerGuessEvent fired")
                             }
                         }
                         // fire event in the correct place

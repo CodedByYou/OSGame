@@ -192,7 +192,14 @@ class GameRoom(
             player.sendMessage("You have already guessed for this round")
             return
         }
+        println("Player ${player.uniqueName} guessed $guess")
+
         currentGuesses[player] = guess
+        println("Current guesses size: ${currentGuesses.size}")
+        println("Room players size: ${roomPlayers.size}")
+        println("Spectators size: ${spectators.size}")
+        println("Room player chances size: ${roomPlayerChances.size}")
+        println((roomPlayers.size-spectators.size) == currentGuesses.size)
         if (currentGuesses.size == (roomPlayers.size-spectators.size)) {
             endRound()
         }

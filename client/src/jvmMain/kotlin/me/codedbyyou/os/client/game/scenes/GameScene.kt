@@ -178,7 +178,9 @@ class GameScene(
                                         PacketType.GAME_PLAYER_GUESS.toPacket(
                                             mapOf("guess" to it)
                                         )
+
                                     )
+                                    println("Guessing $it")
                                 }
                             input2.text = ""
                             enabled = false
