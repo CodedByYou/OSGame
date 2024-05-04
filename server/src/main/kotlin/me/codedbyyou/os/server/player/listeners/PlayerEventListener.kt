@@ -38,11 +38,14 @@ class PlayerEventListener : EventListener {
     fun onPlayerChat(event : PlayerChatEvent) {
         println("Player ${event.player.uniqueName} said: ${event.message}")
         val messageBefore = event.message
+
         event.message = censoredWords.fold(event.message) { acc, word ->
             acc.replace(word, "*".repeat(word.length))
         }
+
         if(messageBefore == event.message)
             return
+
         if (warningMap.getOrDefault(event.player.uniqueName, 0) >= 3) {
             event.player.sendMessage("[Server] You have been muted for spamming")
             event.isCancelled = true

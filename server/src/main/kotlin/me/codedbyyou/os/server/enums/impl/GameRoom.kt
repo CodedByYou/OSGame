@@ -251,7 +251,7 @@ class GameRoom(
                     player.sendMessage("You have lost the round")
                     player as GamePlayer
                     player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
-                    delay(1000)
+                    delay(500)
                     player.sendTitle("You have lost the round", "Better luck next time", 1f)
 
                     roundResults[player]?.add(4) ?: run {

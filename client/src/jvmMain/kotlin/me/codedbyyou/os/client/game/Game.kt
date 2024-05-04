@@ -146,7 +146,7 @@ class Game(context: Context) : Game<Scene>(context) {
                     mutableListOf(
                         VectorFont.Text(
                             title.text, 48,
-                            Color.LIME.toLinear().gamma(
+                            Color.DARK_MAGENTA.toLinear().gamma(
                                 gamma
                             )
                         )
@@ -163,7 +163,7 @@ class Game(context: Context) : Game<Scene>(context) {
                     mutableListOf(
                         VectorFont.Text(
                             title.subtitle, 24,
-                            Color.LIME.toLinear().gamma(
+                            Color.MAGENTA.toLinear().gamma(
                                 gamma
                             )
                         )

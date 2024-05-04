@@ -362,7 +362,7 @@ class RoomInfoDialog(
                                         text = "Join"
                                         disabled = room.roomStatus != RoomStatus.NOT_STARTED
                                         onPressed += {
-
+                                            if (!disabled)
                                             KtScope.launch {
                                                 println("Joining room ${room.roomNumber}")
                                                 Client.connectionManager.sendPacket(
