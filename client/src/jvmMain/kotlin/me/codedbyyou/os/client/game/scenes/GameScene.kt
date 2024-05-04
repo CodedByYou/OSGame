@@ -92,12 +92,12 @@ class GameScene(
                             chancesLeftString = "Chances Left: $chances"
                             println(chancesLeftString)
                             guessingButton.enabled = true
+                            guessingButton.visible = true
                         }
                         PacketType.GAME_ROUND_END -> {
                             leaderboard.enabled = true
                             leaderboard.visible = true
                             gameStatus = "Round Ended"
-                            guessingButton.enabled = false
                         }
                         PacketType.GAME_PLAYER_GUESS -> {
 //                            some player guessed
@@ -116,7 +116,7 @@ class GameScene(
 
     private val leaderboard : PanelContainer
     private val guessBox : PanelContainer
-    private val guessingButton : Node
+    private val guessingButton : Button
     val graph = sceneGraph(context, batch = myBatch) {
         viewport {
             viewport  = extendViewport
@@ -172,15 +172,14 @@ class GameScene(
                         text = "Submit"
                         minWidth = 100f
                         enabled = false
+                        visible = false
                         onPressed += {
                                 input2.text?.let {
                                     Client.connectionManager.sendPacket(
                                         PacketType.GAME_PLAYER_GUESS.toPacket(
                                             mapOf("guess" to it)
                                         )
-
                                     )
-                                    println("Guessing $it")
                                 }
                             input2.text = ""
                             enabled = false

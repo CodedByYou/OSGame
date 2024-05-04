@@ -183,7 +183,8 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         GAME_PLAYER_READY -> TODO()
                         GAME_PLAYER_GUESS -> {
                             // Extract the guess from the packet data
-                            val guess = packetData["guess"] as Int
+                            val guess = packetData["guess"].toString().toInt()
+                            println("[CLIENT_HANDLER] Player $nickname guessed $guess")
                             val room = player?.let { Server.gameManager.getRoomByPlayer(it.uniqueName) }
                             println("[CLIENT_HANDLER] is room null? ${room == null}")
                             println("[CLIENT_HANDLER] Player $nickname guessed $guess")

@@ -227,52 +227,83 @@ class GameRoom(
         val twoThirds = (average * 2) / 3
         val closest = guesses.minByOrNull { abs(it - twoThirds) }!!
         val winners = currentGuesses.filter { it.value == closest }.keys
-        winners.forEach { player ->
-            player.sendMessage("You have won the round")
-            player as GamePlayer
-            player.addPacket(PacketType.GAME_ROUND_END.toPacket())
-            player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket(mapOf("type" to "round")))
-            player.sendTitle("You have won the round", "Congratulations", 1f)
-            roundWinners.add(player)
-            roundResults[player]?.add(5) ?: run {
-                roundResults[player] = mutableListOf(5)
-            }
-        }
-        (roomPlayers.toSet() - winners.toSet()).forEach { player ->
-            player.sendMessage("You have lost the round")
-            player as GamePlayer
-            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
-            player.sendTitle("You have lost the round", "Better luck next time", 1f)
 
-            roundResults[player]?.add(4) ?: run {
-                roundResults[player] = mutableListOf(4)
+        val coroutineScope = CoroutineScope(Dispatchers.Default)
+
+        coroutineScope.launch {
+            val winnerJobs = winners.map { player ->
+                async {
+                    player as GamePlayer
+                    player.sendMessage("You have won the round")
+                    player.addPacket(PacketType.GAME_ROUND_END.toPacket())
+                    delay(1000)
+                    player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket(mapOf("type" to "round")))
+                    player.sendTitle("You have won the round", "Congratulations", 1f)
+                    roundWinners.add(player)
+                    roundResults[player]?.add(5) ?: run {
+                        roundResults[player] = mutableListOf(5)
+                    }
+                }
             }
-            roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
-            if(roomPlayerChances[player] == 0) {
-                player.sendMessage("You have lost the game")
-                player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
-                turnToSpectator(player)
+
+            val loserJobs = (roomPlayers.toSet() - winners.toSet()).map { player ->
+                async {
+                    player.sendMessage("You have lost the round")
+                    player as GamePlayer
+                    player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
+                    delay(500)
+                    player.sendTitle("You have lost the round", "Better luck next time", 1f)
+
+                    roundResults[player]?.add(4) ?: run {
+                        roundResults[player] = mutableListOf(4)
+                    }
+                    roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
+                    if (roomPlayerChances[player] == 0) {
+                        delay(500)
+                        player.sendMessage("You are now a spectator")
+                        player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
+                        turnToSpectator(player)
+                    }
+                }
             }
-        }
-        if (currentRound == roundsNumber) {
-            end()
-        } else {
-            roomPlayers.forEach { player ->
-                player.sendMessage("Round $currentRound")
-                player.sendMessage("Average: $average")
-                player.sendMessage("Two Thirds: $twoThirds")
-                player.sendMessage("Closest: $closest")
-                player.sendMessage("Winners: ${winners.joinToString { it.uniqueName }}")
-                player as GamePlayer
-                player.addPacket(PacketType.GAME_ROUND_INFO.toPacket(mapOf(
-                    "round" to currentRound,
-                    "average" to average,
-                    "two thirds" to twoThirds,
-                    "closest" to closest,
-                    "winners" to winners.joinToString { it.uniqueName }
-                )))
+
+            winnerJobs.awaitAll()
+            loserJobs.awaitAll()
+
+            if (currentRound == roundsNumber) {
+                end()
+            } else {
+//                roomPlayers.forEach { player ->
+//                player.sendMessage("Round $currentRound")
+//                player.sendMessage("Average: $average")
+//                player.sendMessage("Two Thirds: $twoThirds")
+//                player.sendMessage("Closest: $closest")
+//                player.sendMessage("Winners: ${winners.joinToString { it.uniqueName }}")
+//                player as GamePlayer
+//                player.addPacket(PacketType.GAME_ROUND_INFO.toPacket(mapOf(
+//                    "round" to currentRound,
+//                    "average" to average,
+//                    "two thirds" to twoThirds,
+//                    "closest" to closest,
+//                    "winners" to winners.joinToString { it.uniqueName }
+//                )))
+//            }
+                currentGuesses.clear()
+                roomPlayers.forEach { player ->
+                    Executors.newSingleThreadExecutor().execute {
+                        sleep(1000)
+                        player as GamePlayer
+                        player.addPacket(
+                            PacketType.GAME_ROUND_START
+                                .toPacket(
+                                    mapOf(
+                                        "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString(),
+                                    )
+                                )
+                        )
+                    }
+                }
             }
-            currentGuesses.clear()
         }
     }
 
