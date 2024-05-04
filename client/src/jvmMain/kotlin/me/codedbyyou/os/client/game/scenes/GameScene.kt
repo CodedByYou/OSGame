@@ -180,6 +180,9 @@ class GameScene(
                                         )
                                     )
                                 }
+                            input2.text = ""
+                            enabled = false
+                            visible = false
                         }
                     }
                 }
