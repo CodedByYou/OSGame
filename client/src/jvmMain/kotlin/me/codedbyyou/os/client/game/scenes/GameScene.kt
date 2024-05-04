@@ -90,25 +90,14 @@ class GameScene(
                             val chances = data[1]
                             gameStatus = "Round $round"
                             chancesLeftString = "Chances Left: $chances"
-                            println("Chances Left: ${packet.packetData["chances"].toString()}")
+                            println(chancesLeftString)
                             guessingButton.enabled = true
-                            guessBox.children.forEach {
-                                if (it is LineEdit){
-                                    it.enabled = true
-                                }
-                            }
-
                         }
                         PacketType.GAME_ROUND_END -> {
                             leaderboard.enabled = true
                             leaderboard.visible = true
                             gameStatus = "Round Ended"
                             guessingButton.enabled = false
-                            guessBox.children.forEach {
-                                if (it is LineEdit){
-                                    it.enabled = false
-                                }
-                            }
                         }
                         PacketType.GAME_PLAYER_GUESS -> {
 //                            some player guessed

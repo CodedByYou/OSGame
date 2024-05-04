@@ -42,11 +42,14 @@ object PlayerManager {
                     while (playerPackets.isNotEmpty()) {
                         val (player, packet) = playerPackets.poll()
                         playerDataProcessors[player.uniqueName].let {
-                            packet.sendPacket(it!!)
-                            logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
+                            synchronized(it!!) {
+                                packet.sendPacket(it!!)
+                                logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
+                            }
+
                         }
                     }
-                    delay(100)
+                    delay(50)
                 }
             }
         }.start()

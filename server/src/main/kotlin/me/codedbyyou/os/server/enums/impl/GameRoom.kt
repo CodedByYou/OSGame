@@ -2,6 +2,7 @@ package me.codedbyyou.os.server.enums.impl
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.core.enums.RoomStatus
 import me.codedbyyou.os.core.interfaces.player.Player
@@ -146,16 +147,18 @@ class GameRoom(
                     roomPlayers.forEach { player ->
                         player.sendTitle("Game starting in ${3 - it} seconds", "Be ready!",1f)
                     }
-                    Thread.sleep(1000)
+                    delay(1000)
                 }
+                delay(1000)
+
                 roomPlayers.forEach { player ->
                     // send packet of game start
                     player as GamePlayer
                     player.sendMessage("Game has started")
-//                    player.addPacket(PacketType.GAME_START.toPacket())
+                    player.addPacket(PacketType.GAME_START.toPacket())
                     player.sendTitle("Game has started", "Good luck!", 1f)
                     println("Game has started was sent to ${player.uniqueName}")
-                    player.addPacket(
+                    player.addPacket( // sometimes 1 in a few reachers a player, but most of the time it doesnt
                         PacketType.GAME_ROUND_START
                             .toPacket(
                                 mapOf(

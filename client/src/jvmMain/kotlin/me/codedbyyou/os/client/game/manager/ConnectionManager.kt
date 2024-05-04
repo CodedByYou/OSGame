@@ -71,7 +71,7 @@ class ConnectionManager {
     /**
      * GameScene Channel
      */
-    val gameSceneChannel : Channel<Packet> = Channel()
+    val gameSceneChannel : Channel<Packet> = Channel(Channel.UNLIMITED)
 
     /**
      * This function will be used to connect to the server
@@ -187,6 +187,7 @@ class ConnectionManager {
                     CLIENT_INFO -> TODO()
                     PLAYER_LEAVE -> TODO("Implement Player Leave in the Game")
                     GAME_START -> {
+                        println("Received game start!")
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received game start")

@@ -107,7 +107,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             }
 
                         }
-
                         CLIENT_INFO -> {
                             // send back client info, if is authenticated and if is authorized send back the player info
                             // basic logic for now
@@ -123,7 +122,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                 output.write("[${CLIENT_INFO}]".toByteArray())
                             }
                         }
-
                         PLAYER_LEAVE -> {
                             val message = data.substring(data.indexOf("]") + 1)
                             logger.info("Player $nickname has left the server: $message")
@@ -224,21 +222,17 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
 
                         GAME_CREATE -> TODO()
                         GAME_JOIN -> {
-                            println("Joining game room")
                             val roomNumber = packetData["room"].toString().toInt()
-                            println("Joining room $roomNumber")
                             val room = Server.gameManager.getRoom(roomNumber)
                             if (room != null) {
                                 if (room.isFull()) {
                                     ROOM_FULL.sendPacket(output)
                                     return
                                 }
-                                println("Room found!")
                                 room.addPlayer(player!!)
                                 gameRoomID = roomNumber
                                 GAME_JOIN.sendPacket(output)
                             } else {
-                                println("No such room")
                                 NO_SUCH_ROOM.sendPacket(output)
                             }
                         }
