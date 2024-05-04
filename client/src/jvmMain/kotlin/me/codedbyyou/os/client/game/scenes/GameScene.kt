@@ -82,6 +82,8 @@ class GameScene(
                             println("Game Started")
                         }
                         PacketType.GAME_END -> {
+                            leaderboard.enabled = true
+                            leaderboard.visible = true
                             gameStatus = "Game Ended"
                         }
                         PacketType.GAME_ROUND_START -> {
@@ -95,8 +97,7 @@ class GameScene(
                             guessingButton.visible = true
                         }
                         PacketType.GAME_ROUND_END -> {
-                            leaderboard.enabled = true
-                            leaderboard.visible = true
+
                             gameStatus = "Round Ended"
                         }
                         PacketType.GAME_PLAYER_GUESS -> {

@@ -251,7 +251,7 @@ class GameRoom(
                     player.sendMessage("You have lost the round")
                     player as GamePlayer
                     player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
-                    delay(500)
+                    delay(1000)
                     player.sendTitle("You have lost the round", "Better luck next time", 1f)
 
                     roundResults[player]?.add(4) ?: run {
@@ -361,23 +361,43 @@ class GameRoom(
      */
     override fun end() {
         roomStatus = RoomStatus.ENDED
-        // there can be multiple winners, if they are tied in rounds won
-        val winners = roundWinners.groupBy { it }.maxByOrNull { it.value.size }!!.value
-        winners.forEach { player ->
-            player.sendMessage("You have won the game")
-            player as GamePlayer
-            player.sendTitle("Game Over", "You have won the game, legend!", 1f)
-            player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
-            player.addPacket(PacketType.GAME_END.toPacket())
-        }
-        (roomPlayers.toSet() - winners.toSet()).forEach { player ->
-            player.sendMessage("You have lost the game")
-            player as GamePlayer
-            player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
-            player.sendTitle("Game Over", "You have lost the game", 1f)
-            player.addPacket(PacketType.GAME_END.toPacket())
+
+        val coroutineScope = CoroutineScope(Dispatchers.Default)
+
+        coroutineScope.launch {
+            val winners = roundWinners.groupBy { it }.maxByOrNull { it.value.size }!!.value
+
+            winners.forEach { player ->
+                async {
+                    player.sendMessage("You have won the game")
+                    sleep(200)
+                    player as GamePlayer
+                    player.sendTitle("Game Over", "You have won the game, legend!", 1f)
+                    player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
+                    sleep(1000)
+                    player.addPacket(PacketType.GAME_END.toPacket())
+                }
+            }
+
+            // Sending losing packets
+            val losers = roomPlayers.toSet() - winners.toSet()
+            losers.forEach { player ->
+                async {
+                    player.sendMessage("You have lost the game")
+                    sleep(200)
+                    player as GamePlayer
+                    player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
+                    player.sendTitle("Game Over", "You have lost the game", 1f)
+                    sleep(1000)
+                    player.addPacket(PacketType.GAME_END.toPacket())
+                }
+            }
+
+            // Await all tasks to complete
+            delay(1000) // Adding a delay between sending packets
         }
     }
+
 }
 
 
