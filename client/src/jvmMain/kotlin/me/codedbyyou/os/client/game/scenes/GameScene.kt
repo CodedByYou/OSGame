@@ -130,7 +130,12 @@ class GameScene(
                 slice = Game.backgroundImage?.slice()
                 stretchMode = TextureRect.StretchMode.KEEP_ASPECT_CENTERED
             }
-
+            container = centerContainer{
+                anchor(Control.AnchorLayout.CENTER)
+                stretchRatio = 1f
+                horizontalSizeFlags = Control.SizeFlag.FILL
+                verticalSizeFlags = Control.SizeFlag.FILL
+            }
             leaderboard = panelContainer {
                 marginTop = 50f
                 marginLeft = 10f
@@ -172,7 +177,6 @@ class GameScene(
                     var input2 = lineEdit {
                         placeholderText = "Enter your guess"
                         minWidth = context.graphics.width * 7 / 10f - 130f
-
                     }
                     guessingButton = soundButton {
                         text = "Submit"
@@ -208,7 +212,7 @@ class GameScene(
                     container!!.removeChild(exitMenu!!)
                     exitMenu = null
                 }else {
-                    exitMenu = container?.inGameMenuDialog(onSelection) {}
+                    exitMenu = container!!.inGameMenuDialog(onSelection) {}
                 }
             }
             loadLeaderboardSignal += {
@@ -224,29 +228,62 @@ class GameScene(
 
                         column{
                             separation = 20
-                            column {
+                            row {
                                 separation = 10
-                                label {
-                                    text = "Player"
-                                    horizontalAlign = HAlign.LEFT
+                                column {
+                                    minWidth = context.graphics.width * 5 / 10f * 0.5f
+                                    label {
+                                        text = "Player"
+                                        color = Color.CYAN
+                                        horizontalAlign = HAlign.LEFT
+                                    }
                                 }
-                                label {
-                                    text = "Score"
-                                    horizontalAlign = HAlign.LEFT
+                                column {
+                                    minWidth = context.graphics.width * 5 / 10f * 0.5f
+                                    label {
+                                        text = "Score"
+                                        color = Color.CYAN
+                                        horizontalAlign = HAlign.LEFT
+                                    }
                                 }
                             }
                         }
-
-                        leadboardData.forEach {
-                            column {
+                        var topScore = -1
+                        leadboardData.forEachIndexed { index, it ->
+                            row {
                                 separation = 10
-                                label {
-                                    text = it.first
-                                    horizontalAlign = HAlign.LEFT
+                                column {
+                                    minWidth = context.graphics.width * 5 / 10f * 0.5f
+                                    label {
+                                        text = it.first
+                                        horizontalAlign = HAlign.LEFT
+                                        try {
+                                            if (index == 0 || it.second.toInt() == topScore) {
+                                                color = Color.fromHex("Ffd700")
+                                                topScore = it.second.toString().toInt()
+                                            } else {
+                                                color = Color.LIGHT_GRAY
+                                            }
+                                        } catch (e: Exception) {
+                                            color = Color.LIGHT_GRAY
+                                        }
+                                    }
                                 }
-                                label {
-                                    text = it.second
-                                    horizontalAlign = HAlign.LEFT
+                                column {
+                                    label {
+                                        text = it.second
+                                        horizontalAlign = HAlign.LEFT
+                                        try {
+                                            if (index == 0 || it.second.toInt() == topScore) {
+                                                color = Color.fromHex("Ffd700")
+                                                topScore = it.second.toString().toInt()
+                                            } else {
+                                                color = Color.LIGHT_GRAY
+                                            }
+                                        } catch (e: Exception) {
+                                            color = Color.LIGHT_GRAY
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -267,7 +304,6 @@ class GameScene(
     override fun Context.render(dt: kotlin.time.Duration) {
         gl.clear(ClearBufferMask.COLOR_BUFFER_BIT)
         gl.clear(ClearBufferMask.DEPTH_BUFFER_BIT)
-
 
         text = VectorFont.TextBlock(
             10f,

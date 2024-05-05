@@ -9,10 +9,15 @@ import com.lehaine.littlekt.graph.node.node
 import com.lehaine.littlekt.graph.node.ui.*
 import com.lehaine.littlekt.graphics.Color
 import com.lehaine.littlekt.util.signal
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.scenes.MenuScene
+import me.codedbyyou.os.client.game.scenes.ServerLobbyScene
 import me.codedbyyou.os.client.ui.soundButton
+import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.core.interfaces.server.toPacket
 import kotlin.reflect.KClass
 
 
@@ -40,6 +45,7 @@ class InGameMenuDialog(
             this.parent?.removeChild(this)
         }
         anchor(layout = AnchorLayout.CENTER)
+
         panelContainer {
             paddedContainer {
                 padding(10)
@@ -69,11 +75,35 @@ class InGameMenuDialog(
                         }
                     }
 
+                    if(Client.gameState == GameState.PLAYING) {
+                        soundButton {
+                            minWidth = 200f
+                            text = "Leave Game"
+                            onPressed += {
+                                KtScope.launch {
+                                    Client.connectionManager.sendPacket(
+                                        PacketType.GAME_LEAVE.toPacket()
+                                    )
+                                    Client.gameState = GameState.SERVER_JOIN_MENU
+                                    delay(500)
+                                    onSelection.invoke(ServerLobbyScene::class)
+                                }
+                            }
+                        }
+                    }
+
                     soundButton {
                         minWidth = 200f
                         text = "Leave Server"
                         onPressed += {
                             KtScope.launch {
+                                if(GameState.PLAYING == Client.gameState) {
+                                    Client.connectionManager.sendPacket(
+                                        PacketType.GAME_LEAVE.toPacket()
+                                    )
+                                    delay(500)
+                                }
+
                                 if (Client.connectionManager.isConnected())
                                     Client.connectionManager.disconnect()
                                 onSelection.invoke(MenuScene::class)

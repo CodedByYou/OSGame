@@ -13,6 +13,7 @@ import com.lehaine.littlekt.util.signal
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import me.codedbyyou.os.client.game.manager.TitleManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.runtime.client.User
 import me.codedbyyou.os.client.game.scenes.ServerLobbyScene
@@ -22,6 +23,7 @@ import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.core.models.Title
 import java.util.logging.Logger
 import kotlin.reflect.KClass
 
@@ -78,7 +80,7 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
             }
         }
         onEditServer += {
-            // TODO: Implement server editing
+            TitleManager.addTitle(Title("Soon to be implemented", "This feature is not yet implemented", 1f))
         }
         onRefresh += {
             serverListColumn?.destroyAllChildren()
