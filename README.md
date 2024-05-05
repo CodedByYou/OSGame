@@ -21,4 +21,4 @@ The game was made using Kotlin, which runs on the Java Virtual Machine (JVM), ma
 | Abdelrazzaq | 25% |
 
 ## References
-- https://kotlinlang.org/docs/channels.html
+https://kotlinlang.org/docs/channels.html
