@@ -52,7 +52,6 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                 delay(50)
                 if (chosenServer!!.psuedoName != null ) {
                     logger.info("Sending server auth packet")
-                    println(chosenServer?.psuedoName + "#" + chosenServer?.ticket)
                     Client.connectionManager.sendPacket(
                         Packet(
                             PacketType.SERVER_AUTH,
@@ -79,9 +78,11 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                 onSelection(ServerMenuJoinScene::class)
             }
         }
+
         onEditServer += {
             TitleManager.addTitle(Title("Soon to be implemented", "This feature is not yet implemented", 1f))
         }
+
         onRefresh += {
             serverListColumn?.destroyAllChildren()
             for (server in Config.servers){
@@ -166,6 +167,7 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                                 label {
                                     text = "No servers found"
                                     horizontalAlign = HAlign.CENTER
+                                    color = Color.RED
                                 }
                             } else {
                                 onRefresh.emit()
@@ -198,6 +200,7 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                                 onPressed += {
                                     onRefresh.emit()
                                 }
+                                color = Color.CYAN
                             }
 
                             soundButton {
@@ -205,6 +208,7 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                                 onPressed += {
                                     onBack.emit()
                                 }
+                                color = Color.DARK_GRAY
                             }
                         }
                     }

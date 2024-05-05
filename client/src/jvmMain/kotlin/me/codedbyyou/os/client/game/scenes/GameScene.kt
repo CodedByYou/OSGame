@@ -24,12 +24,14 @@ import kotlinx.coroutines.newCoroutineContext
 import me.codedbyyou.os.client.game.Game
 import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.manager.ConnectionManager
+import me.codedbyyou.os.client.game.manager.TitleManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.ui.dialog.*
 import me.codedbyyou.os.client.ui.soundButton
 import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.toPacket
+import me.codedbyyou.os.core.models.Title
 import kotlin.math.min
 import kotlin.reflect.KClass
 
@@ -91,6 +93,18 @@ class GameScene(
 
                             loadLeaderboardSignal.emit()
                             gameStatus = "Game Ended"
+                            KtScope.launch {
+                                var countDown = 4
+                                while (countDown > 0){
+                                    TitleManager.addTitle(Title("Game Ended","Returning to Lobby in $countDown seconds", 1000))
+                                    delay(1000)
+                                    countDown--
+                                }
+                                gameStatus = "Starting Soon"
+                                chancesLeftString = ""
+                                leadboardData.clear()
+                                onSelection(ServerLobbyScene::class)
+                            }
                         }
                         PacketType.GAME_ROUND_START -> {
                             val data = packet.packetData["data"].toString().split(":")

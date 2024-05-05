@@ -89,6 +89,13 @@ class GameRoom(
         roomPlayerChances[player] = roomChances
         player as GamePlayer
         player.sendTitle("Welcome to the game user", "Room: $roomName", 1f)
+        GlobalScope.launch {
+            roomPlayers.forEach { roomPlayer ->
+                Executors.newSingleThreadExecutor().execute {
+                    roomPlayer.sendMessage("Player ${player.uniqueName} has joined the room")
+                }
+            }
+        }
     }
 
     /**
@@ -98,30 +105,31 @@ class GameRoom(
      * @param player the player to remove from the room.
      * @see GamePlayer
      */
-    fun removePlayer(player: Player) {
+    fun removePlayer(player: Player, sendTitles : Boolean = true) {
         roomPlayers.remove(player)
         spectators.remove(player)
         player as GamePlayer
-        player.sendTitle("You have left the room", "Goodbye!", 1f)
-        roomPlayers.forEach { roomPlayer ->
-            roomPlayer.sendMessage("Player ${player.uniqueName} has left the room")
-            roomPlayer as GamePlayer
-            roomPlayer.addPacket(PacketType.GAME_PLAYER_LEAVE.toPacket(mapOf("player" to player.uniqueName)))
-        }
-        spectators.forEach() { spectator ->
-            spectator.sendMessage("Player ${player.uniqueName} has left the room")
-            spectator as GamePlayer
-            spectator.addPacket(PacketType.GAME_PLAYER_LEAVE.toPacket(mapOf("player" to player.uniqueName)))
-        }
+        if (sendTitles)
+            player.sendTitle("You have left the room", "Goodbye!", 1f)
 
-        if (roomPlayers.size == 1 && roomStatus == RoomStatus.STARTED) {
-            end()
-            roomStatus = RoomStatus.NOT_STARTED
-            return
-        }
-
-        if (roomPlayers.isEmpty()) {
-            roomStatus = RoomStatus.NOT_STARTED
+        GlobalScope.launch {
+            roomPlayers.forEach { roomPlayer ->
+                Executors.newSingleThreadExecutor().execute {
+                    roomPlayer.sendMessage("Player ${player.uniqueName} has left the room")
+                }
+            }
+            spectators.forEach() { spectator ->
+                spectator.sendMessage("Player ${player.uniqueName} has left the room")
+            }
+            delay(500)
+            if (roomPlayers.size == 1 && roomStatus == RoomStatus.STARTED) {
+                end()
+                roomStatus = RoomStatus.NOT_STARTED
+                return@launch
+            }
+            if (roomPlayers.isEmpty()) {
+                roomStatus = RoomStatus.NOT_STARTED
+            }
         }
 
     }
@@ -404,9 +412,10 @@ class GameRoom(
                 }
             }
 
-            // Await all tasks to complete
             delay(5000)
             roomStatus = RoomStatus.NOT_STARTED
+            roomPlayers.clear()
+            spectators.clear()
         }
     }
 

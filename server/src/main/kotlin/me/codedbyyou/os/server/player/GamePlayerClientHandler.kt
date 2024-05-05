@@ -264,11 +264,8 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         SERVER_AUTH -> {
                             val nickTicket = packetData["nickTicket"] as String
                             val macAddress = packetData["macAddress"] as String
-                            println("Authenticating player $nickTicket with mac address $macAddress")
                             val isMacAddressRegistered = PlayerManager.isMacAddressRegistered(macAddress)
-                            println("Is mac address registered: $isMacAddressRegistered")
                             val isPlayerValid = PlayerManager.isValidPlayer(nickTicket)
-                            println("Is player valid: $isPlayerValid")
                             if (PlayerManager.doAuth(nickTicket, macAddress)) {
                                 synchronized(PlayerManager) {
                                     player = PlayerManager.connect(
@@ -327,6 +324,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                 }
             }
         if (player != null) {
+            Server.gameManager.getRoom(gameRoomID)?.removePlayer(player!!, false)
             PlayerManager.disconnect(player!!.uniqueName)
         }
 
