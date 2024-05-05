@@ -200,7 +200,7 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                                 onPressed += {
                                     onRefresh.emit()
                                 }
-                                color = Color.CYAN
+                                color = Color.DARK_GREEN
                             }
 
                             soundButton {
@@ -208,7 +208,6 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                                 onPressed += {
                                     onBack.emit()
                                 }
-                                color = Color.DARK_GRAY
                             }
                         }
                     }
