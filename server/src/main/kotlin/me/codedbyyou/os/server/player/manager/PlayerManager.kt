@@ -168,6 +168,7 @@ object PlayerManager {
             ip = ip,
             macAddress = macAddress
         )
+        Server.lastPinged[nickTicket] = System.currentTimeMillis()
         playerDataProcessors[nickTicket] = outputStream
         return player
     }

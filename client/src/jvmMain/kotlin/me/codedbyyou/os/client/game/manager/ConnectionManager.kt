@@ -1,13 +1,12 @@
 package me.codedbyyou.os.client.game.manager
 
-import com.lehaine.littlekt.Game
-import com.lehaine.littlekt.Scene
 import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.async.newSingleThreadAsyncContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.runtime.client.Client
+import me.codedbyyou.os.client.game.scenes.MenuScene
 import me.codedbyyou.os.client.ui.dialog.Server
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType.*
@@ -16,7 +15,6 @@ import me.codedbyyou.os.core.models.Title
 import java.io.OutputStream
 import java.net.Socket
 import java.util.logging.Logger
-import kotlin.reflect.KClass
 
 class ConnectionManager {
     private val logger = Logger.getLogger("ConnectionManager")
@@ -25,7 +23,6 @@ class ConnectionManager {
     private var connectionJob: Job? = null
     private var output: OutputStream? = null
 
-    // i want to change scene
     companion object {
         var serverScreenCallBack : (suspend () -> Unit)? = null
             set(value){
@@ -177,16 +174,21 @@ class ConnectionManager {
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received title")
-                                TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), 1f))
+                                var duartion = try {
+                                    packetData["duration"].toString().toFloat()
+                                } catch (e: Exception) {
+                                    1f
+                                }
+                                TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), duration = duartion))
                             }
                         }
                     }
                     KICK -> {
                         KtScope.launch {
-                            withContext(channelExecutor){
-                                logger.info("Received kick packet")
-                                TitleManager.addTitle(Title("You have been kicked from the server", packetData["reason"].toString(), 5f))
-                            }
+                            logger.info("Received kick gift packet")
+                            TitleManager.addTitle(Title("You have been kicked from the server", packetData["reason"].toString(), 5f))
+                            delay(500)
+                            me.codedbyyou.os.client.game.Game.INSTANCE!!.onSelection(MenuScene::class)
                         }
                     }
                     CLIENT_INFO -> TODO()

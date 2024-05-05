@@ -19,6 +19,7 @@ import me.codedbyyou.os.server.events.custom.PlayerLoseEvent
 import me.codedbyyou.os.server.events.custom.PlayerWinEvent
 import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
+import java.util.concurrent.Executors
 
 class GamePlayerClientHandler(val socket: Socket) : Runnable {
     private val logger = Server.logger
@@ -37,7 +38,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
             val output = socket.getOutputStream()
             val buffer = ByteArray(4096)
             var read : Int
-
             // To know where cpu is being used most in the code, i need to use a profiler, such as visualvm
             // This note is for later
             while (input.read(buffer).also { read = it } != -1) {
@@ -47,6 +47,9 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                 val packetData = packet.packetData
                 logger.info("Received packet type: $packetType")
                 logger.info("Received ${packetData.size} packet data")
+                player?.let {
+                    player -> Server.lastPinged[player.uniqueName] = System.currentTimeMillis()
+                }
                     when (packetType) {
                         INFO_PING -> {
                             val dataSent = mapOf<String, Any>(
@@ -160,9 +163,27 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                 }
 
                                 room.addPlayer(player!!)
+
                                 gameRoomID = gameID
                                 PLAYER_ROOM_JOIN
                                     .sendPacket(output)
+                                val games = Server.gameManager.getRooms()
+                                    .map { it.toGameRoomInfo() }
+                                PlayerManager.getOnlinePlayers().forEach {
+                                    Executors.newSingleThreadExecutor().submit {
+                                        if (Server.gameManager.getRoomByPlayer(it.uniqueName) == null) {
+                                            it as GamePlayer
+                                            it.addPacket(
+                                                GAMES_LIST
+                                                    .toPacket(
+                                                        mapOf(
+                                                            "games" to games.serialized()
+                                                        )
+                                                    )
+                                            )
+                                        }
+                                    }
+                                }
                             } else {
                                 NO_SUCH_ROOM.sendPacket(output)
                             }
@@ -192,7 +213,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
                         LEADERBOARD -> {
                             val leaderboard = Server.getLeaderboard()
-                            println(leaderboard.joinToString { "${it.first}:${it.second}" })
                             LEADERBOARD
                                 .toPacket(
                                     mapOf(
@@ -200,19 +220,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                     )
                                 ).sendPacket(output)
                         }
-                        // fire event in the correct place
-//                        GAME_PLAYER_WIN -> {
-//                                val winType = packetData["type"] as WinLoseType
-//                                val playerWinEvent = PlayerWinEvent(player as GamePlayer,winType)
-//                                Server.eventsManager.fireEvent(playerWinEvent)
-//
-//                        }
-//                        GAME_PLAYER_LOSE -> {
-//                            val loseType = packetData["type"] as WinLoseType
-//                            val playerLoseEvent = PlayerLoseEvent(player as GamePlayer, loseType)
-//                            Server.eventsManager.fireEvent(playerLoseEvent)
-//                            TODO()
-//                        }
                         GAMES_LIST -> {
                             logger.info("Preparing game list")
                             val games = Server.gameManager.getRooms()

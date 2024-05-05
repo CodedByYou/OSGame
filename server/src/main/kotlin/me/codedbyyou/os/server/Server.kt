@@ -9,9 +9,11 @@ import me.codedbyyou.os.server.command.CommandManager
 import me.codedbyyou.os.server.command.interfaces.impl.ConsoleCommandSender
 import me.codedbyyou.os.server.events.manager.EventManager
 import me.codedbyyou.os.server.managers.GameRoomManager
+import me.codedbyyou.os.server.player.GamePlayer
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import me.codedbyyou.os.server.player.GamePlayerClientHandler
 import me.codedbyyou.os.server.player.listeners.PlayerEventListener
+import java.lang.Thread.sleep
 import java.net.ServerSocket
 import java.util.Scanner
 import java.util.concurrent.Executors
@@ -38,8 +40,9 @@ object Server : OSGameServer() {
 
     private var status: ServerStatus = ServerStatus.STARTING
     private var socketServer: ServerSocket? = null
+    private var heartBeat = false
     private val playerThreadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
-    private val lastPinged = mutableMapOf<String, Long>()
+    val lastPinged = mutableMapOf<String, Long>()
     val consoleCommandSender = ConsoleCommandSender()
 
     val gameManager = GameRoomManager()
@@ -58,11 +61,16 @@ object Server : OSGameServer() {
             exitProcess(0)
         }
 
+        leaderboard.addAll(config.getStringList("leaderboard").map {
+            val split = it.split(":")
+            split[0] to split[1].toInt()
+        })
+
         PlayerManager
         loadPlayerProfiles()
         val connectedIPs = mutableListOf<String>()
         socketServer = ServerSocket(serverPort)
-        // maybe todo: move to a coroutine
+        // maybe todo: move to a coroutin?
         Executors.newFixedThreadPool(1).submit {
             while (true) {
                 try {
@@ -77,20 +85,25 @@ object Server : OSGameServer() {
             }
         }
 
-       // is working but needs completion, till then it is commented out
-       // to not kick the players out
-       // AFK SECTION
-//        GlobalScope.launch {
-//            launch {
-//                while (true) {
-//                    lastPinged.filter { System.currentTimeMillis() - it.value > 5000 }.forEach {
-//                        PlayerManager.disconnect(PlayerManager.getPlayer(it.key)!!.uniqueName)
-//                        lastPinged.remove(it.key)
-//                    }
-//                    delay(100)
-//                }
-//            }
-//        }
+        GlobalScope.launch {
+            launch {
+                while (true) {
+                    @OptIn
+                    if (heartBeat)
+                        lastPinged.filter { System.currentTimeMillis() - it.value > heartBeatInterval }.forEach {
+                            Executors.newSingleThreadExecutor().execute {
+                            lastPinged.remove(it.key)
+                            val player = PlayerManager.getPlayer(it.key) as GamePlayer
+                            println("Kicking ${player!!.uniqueName} for being afk")
+                            player!!.sendTitle("You have been kicked for being AFK","There can only be one afk",3f)
+                            sleep(300)
+                            player!!.kick("You have been kicked for being AFK")
+                        }
+                    }
+                    delay(501)
+                }
+            }
+        }
 
         Executors.newSingleThreadExecutor().submit {
             println("Type 'stop' to stop the server")
@@ -112,6 +125,10 @@ object Server : OSGameServer() {
     }
 
 
+    override fun toggleHeartBeat(): Boolean {
+        heartBeat = !heartBeat
+        return heartBeat
+    }
     /**
      * Initialize the events listeners for the server
      */
@@ -164,6 +181,8 @@ object Server : OSGameServer() {
         get() = config.getString("server.name")
     override val serverIP: String
         get() = config.getString("server.ip")
+    val heartBeatInterval: Int
+        get() = config.getInt("server.heartbeat_interval", 6) * 1000
     override val serverPort: Int
         get() = config.getInt("server.port")
     override val serverDescription: String

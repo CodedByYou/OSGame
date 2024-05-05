@@ -17,7 +17,7 @@ interface Player {
 
     fun sendActionBar(message: String)
 
-    fun kick(reason: String)
+    fun kick(reason: String, disconnect: Boolean = true)
 
     val uniqueName : String
         get() = "$pseudoName#$ticket"

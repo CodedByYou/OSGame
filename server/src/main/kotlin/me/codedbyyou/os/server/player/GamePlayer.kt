@@ -1,8 +1,12 @@
 package me.codedbyyou.os.server.player
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import java.time.Duration
@@ -68,10 +72,17 @@ class GamePlayer(
      * @param reason the reason for the kick
      * @see Packet
      */
-    override fun kick(reason: String) {
-        addPacket(Packet(PacketType.KICK, mapOf("reason" to reason)))
-        println("Player $pseudoName has been kicked for $reason")
-        //TODO disconnect the player
+    override fun kick(reason: String, disconnect: Boolean){
+        GlobalScope.launch {
+            addPacket(Packet(PacketType.KICK, mapOf("reason" to reason)))
+            println("Player $pseudoName has been kicked for $reason")
+            Server.gameManager.getRoomByPlayer(uniqueName)?.removePlayer(this@GamePlayer, false)
+            if (disconnect) {
+                delay(1200)
+                playerManager.disconnect("$pseudoName#$ticket")
+            }
+        }
+
     }
 
     /**

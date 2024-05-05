@@ -54,8 +54,6 @@ class ServerLobbyScene(
     private val camera = OrthographicCamera(context.graphics.width, context.graphics.height)
     private val vectorFont = Assets.vectorFont
     private val exitMenuSignal = Signal()
-    private val updateLeaderboard = Signal()
-    private val updateLeaderboadUI = Signal()
     private var container : CenterContainer? = null
     private var serverList : ServerInfoDialog? = null
     private var info : RoomInfoDialog? = null

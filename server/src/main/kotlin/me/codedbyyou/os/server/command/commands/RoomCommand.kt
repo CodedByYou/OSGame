@@ -1,10 +1,15 @@
 package me.codedbyyou.os.server.command.commands
 
+import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.command.annotations.*
 import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.command.interfaces.ICommand
+import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
 import me.codedbyyou.os.server.player.GamePlayer
+import me.codedbyyou.os.server.player.manager.PlayerManager
+import java.util.concurrent.Executors
 
 @Command("room", "r")
 @Description("A command to manage rooms and their settings.")
@@ -32,9 +37,25 @@ class RoomCommand : ICommand {
             minPlayers,
             0,
             chances
-
         )
+        val games = Server.gameManager.getRooms()
+            .map { it.toGameRoomInfo() }
         player.sendMessage("Room created: $name")
+        PlayerManager.getOnlinePlayers().forEach {
+            Executors.newSingleThreadExecutor().submit {
+                if (Server.gameManager.getRoomByPlayer(it.uniqueName) == null) {
+                    it as GamePlayer
+                    it.addPacket(
+                        PacketType.GAMES_LIST.toPacket(
+                            mapOf(
+                            "games" to games
+                            )
+                        )
+                    )
+                }
+            }
+        }
+
     }
 
     @SubCommand("delete", "d")
@@ -78,6 +99,7 @@ class RoomCommand : ICommand {
     @Usage("/room clear")
     fun clearRooms(sender: CommandSender) {
         Server.gameManager.clearRooms()
+        Server.gameManager.addRoom("Default Room", "Game Room", 5, "4", 10, 2, 0, 3)
         sender.sendMessage("Rooms cleared, default room created.")
     }
 

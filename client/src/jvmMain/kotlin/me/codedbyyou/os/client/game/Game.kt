@@ -18,6 +18,7 @@ import com.lehaine.littlekt.graphics.g2d.font.VectorFont
 import com.lehaine.littlekt.input.Key
 import com.lehaine.littlekt.util.viewport.ExtendViewport
 import kotlinx.coroutines.launch
+import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.manager.TitleManager
 import me.codedbyyou.os.client.game.scenes.GameScene
 import me.codedbyyou.os.client.resources.Assets
@@ -56,7 +57,7 @@ class Game(context: Context) : Game<Scene>(context) {
     private var font : BitmapFont? = null
     private var vectorFont : VectorFont? = null
 
-    private suspend fun <T : Scene> onSelection(scene: KClass<out T>) =
+    suspend fun <T : Scene> onSelection(scene: KClass<out T>) =
         setScene(scene)
 
     private val camera = OrthographicCamera(context.graphics.width, context.graphics.height)
