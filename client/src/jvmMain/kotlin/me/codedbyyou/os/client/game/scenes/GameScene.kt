@@ -96,7 +96,7 @@ class GameScene(
                             KtScope.launch {
                                 var countDown = 4
                                 while (countDown > 0){
-                                    TitleManager.addTitle(Title("Game Ended","Returning to Lobby in $countDown seconds", 1000))
+                                    TitleManager.addTitle(Title("Game Ended","Returning to Lobby in $countDown seconds", 1f))
                                     delay(1000)
                                     countDown--
                                 }
