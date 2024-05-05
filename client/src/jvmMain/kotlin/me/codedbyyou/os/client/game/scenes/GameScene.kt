@@ -102,6 +102,7 @@ class GameScene(
                                 }
                                 gameStatus = "Starting Soon"
                                 chancesLeftString = ""
+                                Client.gameState = GameState.SERVER_JOIN_MENU
                                 leadboardData.clear()
                                 onSelection(ServerLobbyScene::class)
                             }
