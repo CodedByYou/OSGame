@@ -21,6 +21,7 @@ import com.lehaine.littlekt.math.Vec2f
 import com.lehaine.littlekt.util.signal
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
+import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.scenes.GameScene
@@ -35,6 +36,8 @@ import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.core.models.deserialized
 import java.awt.Container
+import java.lang.Thread.sleep
+import java.util.concurrent.Executors
 import javax.naming.ldap.Control
 import kotlin.reflect.KClass
 
@@ -104,7 +107,7 @@ class ServerInfoDialog() : PaddedContainer() {
                                         label {
                                             text = player
                                             horizontalAlign = HAlign.CENTER
-                                            color = Color.GREEN
+                                            color = Color.DARK_GRAY
                                         }
                                     }
                                 }
@@ -189,8 +192,8 @@ class ChatBox() : PaddedContainer() {
                                     mapOf("message" to chatInput.text)
                                 )
                             )
-                            // what might go wrong here?
                         }
+                        chatInput.text = ""
                     }
                 }
             }
@@ -224,7 +227,7 @@ fun Node.roomInfoDialog(onSelection: suspend (KClass<out Scene>) -> Unit,  conte
 
 class RoomInfoDialog(
     private val onSelection: suspend (KClass<out Scene>) -> Unit,
-    val our: Context,
+    private val our: Context,
 ) : PaddedContainer(){
     private val roomNameLabel: Label
     private val roomInfoContainer: ScrollContainer
@@ -260,7 +263,7 @@ class RoomInfoDialog(
                             label {
                                 text = "No Rooms Available.."
                                 horizontalAlign = HAlign.LEFT
-                                color = Color.RED
+                                color = Color.LIGHT_RED
                             }
                         }
                     }
@@ -309,25 +312,25 @@ class RoomInfoDialog(
                                 label {
                                     text = "Room Name"
                                     horizontalAlign = HAlign.LEFT
-                                    color = Color.GREEN
+                                    color = Color.DARK_CYAN
                                     minWidth = colWidth * 0.6f
                                 }
                                 label {
                                     text = "Players"
                                     horizontalAlign = HAlign.LEFT
-                                    color = Color.GREEN
+                                    color = Color.DARK_CYAN
                                     minWidth = colWidth * 0.2f
                                 }
                                 label {
                                     text = "Status"
                                     horizontalAlign = HAlign.LEFT
-                                    color = Color.GREEN
+                                    color = Color.DARK_CYAN
                                     minWidth = colWidth * 0.2f
                                 }
                                 label {
                                     text = "Join"
                                     horizontalAlign = HAlign.RIGHT
-                                    color = Color.GREEN
+                                    color = Color.DARK_CYAN
                                     minWidth = colWidth * 0.1f
                                 }
                             }
@@ -361,6 +364,7 @@ class RoomInfoDialog(
                                     soundButton {
                                         text = "Join"
                                         disabled = room.roomStatus != RoomStatus.NOT_STARTED
+                                        horizontalAlign = HAlign.RIGHT
                                         onPressed += {
                                             if (!disabled)
                                             KtScope.launch {
@@ -428,6 +432,140 @@ class RoomInfoDialog(
         visible = false
     }
 }
+
+fun Node.leaderboardDialog(context: Context, callback: LeaderboardDialog.() -> Unit = {}) =
+    node(LeaderboardDialog(context), callback)
+
+class LeaderboardDialog(
+    val our: Context,
+) : PaddedContainer() {
+    private val leaderboardList: VBoxContainer
+    private val updateLeaderboard = signal()
+    private val renderLeaderboard = signal()
+    private val thread = newSingleThreadAsyncContext()
+    private val leaderboardData: MutableList<Pair<String, Int>> = mutableListOf()
+
+    init {
+        anchor(layout = AnchorLayout.CENTER_LEFT)
+        padding(10)
+        paddingLeft = (our.graphics.width * 1 / 20f).toInt()
+        panelContainer {
+            minWidth = our.graphics.width * 3 / 10f
+            minHeight = our.graphics.height * 0.9f
+
+            column {
+                separation = 10
+                label {
+                    text = "Leaderboard"
+                    fontScale = Vec2f(1.5f, 1.5f)
+                    horizontalAlign = HAlign.LEFT
+                }
+
+                leaderboardList = column {
+                    separation = 10
+                    column {
+                        label {
+                            text = "No Data Available.."
+                            horizontalAlign = HAlign.LEFT
+                            color = Color.RED
+                        }
+                    }
+                }
+            }
+        }
+
+        updateLeaderboard += {
+            if (Client.connectionManager.isConnected()) {
+                Client.connectionManager.sendPacket(
+                    Packet(
+                        PacketType.LEADERBOARD
+                    )
+                )
+                KtScope.launch {
+                    withContext(newSingleThreadAsyncContext()) {
+                        val packet = Client.connectionManager.leaderboard.receive()
+                        if (packet.packetType == PacketType.LEADERBOARD) {
+                            val leaderboardData =
+                                packet.packetData["leaderboard"].toString().split(",")
+                            this@LeaderboardDialog.leaderboardData.clear()
+                            for (leaderboardDatum in leaderboardData) {
+                                val (player, score) = leaderboardDatum.split(":")
+                                this@LeaderboardDialog.leaderboardData.add(player to score.toInt())
+                            }
+                            this@LeaderboardDialog.renderLeaderboard.emit()
+                        }
+                    }
+
+                }
+
+            }
+        }
+
+        renderLeaderboard += {
+            KtScope.launch {
+                withContext(thread) {
+                    leaderboardList.children.forEach {
+                        leaderboardList.removeChild(it)
+                    }
+                    leaderboardList.destroyAllChildren()
+                    val colWidth = our.graphics.width * 3 / 10f
+                    leaderboardList.apply {
+                        leaderboardList.destroyAllChildren()
+                        column {
+                            row {
+                                label {
+                                    text = "Player"
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.DARK_CYAN
+                                    minWidth = colWidth * 0.6f
+                                }
+                                label {
+                                    text = "Score"
+                                    horizontalAlign = HAlign.LEFT
+                                    color = Color.DARK_CYAN
+                                    minWidth = colWidth * 0.4f
+                                }
+                            }
+                        }
+                        var highestScore = -1
+                        leaderboardData.forEach { entry ->
+                            if(highestScore == -1){
+                                highestScore = entry.second
+                            }
+                            column {
+                                row {
+                                    label {
+                                        text = entry.first
+                                        horizontalAlign = HAlign.LEFT
+                                        minWidth = colWidth * 0.6f
+                                        color = if (entry.second == highestScore) Color.fromHex("Ffd700") else Color.LIGHT_GRAY
+                                    }
+                                    label {
+                                        text = entry.second.toString()
+                                        horizontalAlign = HAlign.LEFT
+                                        color = if (entry.second == highestScore) Color.fromHex("Ffd700") else Color.LIGHT_GRAY
+                                        minWidth = colWidth * 0.4f
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        updateLeaderboard.emit()
+
+        Executors.newSingleThreadExecutor().submit {
+            while (true) {
+                sleep(5000) // Adjust the update interval as needed
+                if (Client.connectionManager.isConnected() && Client.gameState != GameState.PLAYING && this@LeaderboardDialog.visible)
+                    updateLeaderboard.emit()
+            }
+        }
+    }
+}
+
 
 
 // mute and unmute box

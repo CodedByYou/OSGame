@@ -2,7 +2,9 @@ package me.codedbyyou.os.client.game.scenes
 
 import com.lehaine.littlekt.Context
 import com.lehaine.littlekt.Scene
+import com.lehaine.littlekt.async.KtScope
 import com.lehaine.littlekt.graph.node.Node
+import com.lehaine.littlekt.graph.node.resource.HAlign
 import com.lehaine.littlekt.graph.node.ui.*
 import com.lehaine.littlekt.graph.node.viewport
 import com.lehaine.littlekt.graph.sceneGraph
@@ -11,12 +13,19 @@ import com.lehaine.littlekt.graphics.g2d.SpriteBatch
 import com.lehaine.littlekt.graphics.g2d.font.BitmapFontCache
 import com.lehaine.littlekt.graphics.g2d.font.VectorFont
 import com.lehaine.littlekt.graphics.gl.ClearBufferMask
+import com.lehaine.littlekt.math.Vec2f
 import com.lehaine.littlekt.util.Signal
 import com.lehaine.littlekt.util.viewport.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.codedbyyou.os.client.game.Game
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.ui.dialog.*
+import me.codedbyyou.os.client.ui.soundButton
+import me.codedbyyou.os.core.interfaces.server.PacketType
+import me.codedbyyou.os.core.interfaces.server.toPacket
+import java.util.concurrent.Executors
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
@@ -45,6 +54,8 @@ class ServerLobbyScene(
     private val camera = OrthographicCamera(context.graphics.width, context.graphics.height)
     private val vectorFont = Assets.vectorFont
     private val exitMenuSignal = Signal()
+    private val updateLeaderboard = Signal()
+    private val updateLeaderboadUI = Signal()
     private var container : CenterContainer? = null
     private var serverList : ServerInfoDialog? = null
     private var info : RoomInfoDialog? = null
@@ -54,10 +65,11 @@ class ServerLobbyScene(
     private val viewport_ = ExtendViewport(context.graphics.width, context.graphics.height, camera).also { it.apply { context } }
     private var exitMenu : Node? = null
     private var textureRect : TextureRect? = null
+    private var globalLeaderboardDialog : LeaderboardDialog? = null
 
     val graph = sceneGraph(context, batch = myBatch) {
         viewport {
-            viewport  = viewport_
+            viewport = viewport_
             textureRect = textureRect {
                 slice = Game.backgroundImage?.slice()
                 stretchMode = TextureRect.StretchMode.KEEP_ASPECT_CENTERED
@@ -74,11 +86,28 @@ class ServerLobbyScene(
                     verticalSizeFlags = Control.SizeFlag.FILL
                 }
             }
+
+            globalLeaderboardDialog = this.leaderboardDialog(context){}
+            paddedContainer {
+                anchor(Control.AnchorLayout.BOTTOM_RIGHT)
+                paddingRight = (context.graphics.width * 1 / 20)
+                paddingBottom = 10
+                row {
+                    soundButton {
+                        text = "Toggle Leaderboard"
+                        onPressed += {
+                            globalLeaderboardDialog!!.visible = globalLeaderboardDialog!!.visible.not()
+                        }
+                    }
+                }
+            }
+
             serverList = serverInfoDialog()
+
             chatBox()
             muteBox()
-            info  = roomInfoDialog(onSelection, context) {}
-            exitMenuSignal+= {
+            info = roomInfoDialog(onSelection, context) {}
+            exitMenuSignal += {
                 if (exitMenu != null) {
                     container!!.children.forEach {
                         if (it.name == "SettingsDialog")
@@ -86,12 +115,11 @@ class ServerLobbyScene(
                     }
                     container!!.removeChild(exitMenu!!)
                     exitMenu = null
-                }else {
+                } else {
                     exitMenu = container!!.inGameMenuDialog(onSelection) {}
                 }
             }
         }
-
     }
 
     init {
@@ -129,6 +157,7 @@ class ServerLobbyScene(
         if (input.isKeyJustReleased(com.lehaine.littlekt.input.Key.ENTER)) {
             info!!.updateRooms.emit()
         }
+
         graph.update(dt)
         camera.update()
         graph.render()

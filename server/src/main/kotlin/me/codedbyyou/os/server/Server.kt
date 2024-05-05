@@ -16,7 +16,6 @@ import java.net.ServerSocket
 import java.util.Scanner
 import java.util.concurrent.Executors
 import java.util.logging.Logger
-import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 
 
@@ -46,7 +45,7 @@ object Server : OSGameServer() {
     val gameManager = GameRoomManager()
     val eventsManager = EventManager()
     val logger = Logger.getLogger(Server::class.java.name)
-
+    private val leaderboard = mutableListOf<Pair<String, Int>>()
 
     init {
         CommandManager
@@ -106,15 +105,16 @@ object Server : OSGameServer() {
                 if (command.equals("stop", true)) {
                     stop()
                 }
-//                if (command == "broadcast") {
-//                    broadcast(args.joinToString(" "))
-//                }
                 CommandManager.executeCommand(consoleCommandSender, command, args)
             }
         }
         logger.info("Server initialized")
     }
 
+
+    /**
+     * Initialize the events listeners for the server
+     */
     fun initEvents() {
         eventsManager.register(PlayerEventListener())
     }
@@ -132,6 +132,32 @@ object Server : OSGameServer() {
             val ticket = nickTicket.split("#")[1]
             PlayerManager.loadPlayer(nickname, ticket, macAddress)
         }
+    }
+
+    fun updateLeaderboard(map: List<Pair<String, Int>>) {
+        println(map)
+        map.forEach { (name, score) ->
+            val player = leaderboard.find { it.first == name }
+            if (player != null) {
+                leaderboard.remove(player)
+                leaderboard.add(name to score + player.second)
+            } else {
+                leaderboard.add(name to score)
+            }
+        }
+        leaderboard.sortByDescending { it.second }
+        GlobalScope.launch {
+            config.set("leaderboard", leaderboard.map { "${it.first}:${it.second}" })
+            config.save()
+        }
+    }
+
+    /**
+     * Get the leaderboard
+     * @return A list of pairs of the player name and their score
+     */
+    fun getLeaderboard(): List<Pair<String, Int>> {
+        return leaderboard
     }
     
     override val serverName: String

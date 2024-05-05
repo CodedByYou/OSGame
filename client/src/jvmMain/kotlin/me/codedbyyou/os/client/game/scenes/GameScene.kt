@@ -48,7 +48,6 @@ class GameScene(
             field = value
         }
 
-
     init {
         INSTANCE = this
     }
@@ -97,6 +96,7 @@ class GameScene(
                                 var countDown = 4
                                 while (countDown > 0){
                                     TitleManager.addTitle(Title("Game Ended","Returning to Lobby in $countDown seconds", 1f))
+                                    // play experience sound
                                     delay(1000)
                                     countDown--
                                 }

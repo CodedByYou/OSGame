@@ -6,8 +6,8 @@ import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
+import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.enums.Game
-import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.player.GamePlayer
 import java.lang.Thread.sleep
 import java.util.concurrent.Executors
@@ -370,9 +370,8 @@ class GameRoom(
     override fun end() {
         roomStatus = RoomStatus.ENDED
         val sorted = roundResults.toList().sortedByDescending { it.second.sum() }
+        Server.updateLeaderboard(sorted.map { it.first.uniqueName to it.second.sum() })
         val leaderboard = sorted.joinToString { "${it.first.uniqueName}:${it.second.sum()}" }
-        println(sorted)
-        println(leaderboard)
         val coroutineScope = CoroutineScope(Dispatchers.Default)
 
         coroutineScope.launch {

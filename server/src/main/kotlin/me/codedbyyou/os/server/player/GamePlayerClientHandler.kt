@@ -27,7 +27,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
     private var player: Player? = null
     private var gameRoomID: Int = -1
 
-    private val TEMP_ROOM_CMD_USAGE = "[Usage] room create <roomName> <maxPlayers> <rounds> <optional: description>"
     override fun run() {
         /**
          * task is to double-check packet processing and handling (data variable is the packet data)
@@ -190,6 +189,16 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                     room.guess(player as GamePlayer, guess)
                                 }
                             }
+                        }
+                        LEADERBOARD -> {
+                            val leaderboard = Server.getLeaderboard()
+                            println(leaderboard.joinToString { "${it.first}:${it.second}" })
+                            LEADERBOARD
+                                .toPacket(
+                                    mapOf(
+                                        "leaderboard" to leaderboard.joinToString { "${it.first}:${it.second}" }
+                                    )
+                                ).sendPacket(output)
                         }
                         // fire event in the correct place
 //                        GAME_PLAYER_WIN -> {

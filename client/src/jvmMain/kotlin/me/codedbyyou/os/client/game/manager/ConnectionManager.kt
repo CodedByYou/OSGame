@@ -74,6 +74,11 @@ class ConnectionManager {
     val gameSceneChannel : Channel<Packet> = Channel(Channel.UNLIMITED)
 
     /**
+     * Leaderboard Channel
+     */
+    val leaderboard : Channel<Packet> = Channel()
+
+    /**
      * This function will be used to connect to the server
      * @param _server the server to connect to
      * @return ConnectionStatus.CONNECTED if the connection was successful
@@ -298,6 +303,14 @@ class ConnectionManager {
                     SERVER_CHAT_PRIVATE -> TODO()
                     SERVER_CHAT_PUBLIC -> TODO()
                     SERVER_AUTH -> {}
+                    LEADERBOARD -> {
+                        KtScope.launch {
+                            withContext(channelExecutor){
+                                logger.info("Received leaderboard")
+                                leaderboard.send(packet)
+                            }
+                        }
+                    }
                     SERVER_AUTH_SUCCESS -> {
                         KtScope.launch {
                             withContext(channelExecutor) {

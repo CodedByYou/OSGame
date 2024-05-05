@@ -71,7 +71,7 @@ enum class PacketType(val type: Int) {
     SERVER_REGISTER(38), SERVER_REGISTER_SUCCESS(39), SERVER_REGISTER_FAIL(40),
 
 
-    SOUND(42),
+    SOUND(42),  LEADERBOARD(44),
 
     /**
      * 5. Server Error packets under 1.
@@ -79,6 +79,7 @@ enum class PacketType(val type: Int) {
     NO_SUCH_ROOM(-100), NO_SUCH_PLAYER(-101), ROOM_FULL(-102),
     ROOM_ALREADY_STARTED(-103),
     NO_SUCH_PACKET(-999);
+
 
 }
 
