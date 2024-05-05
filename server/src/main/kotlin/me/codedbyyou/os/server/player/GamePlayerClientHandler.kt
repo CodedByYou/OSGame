@@ -182,20 +182,13 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
                         GAME_PLAYER_READY -> TODO()
                         GAME_PLAYER_GUESS -> {
-                            // Extract the guess from the packet data
                             val guess = packetData["guess"].toString().toInt()
-                            println("[CLIENT_HANDLER] Player $nickname guessed $guess")
                             val room = player?.let { Server.gameManager.getRoomByPlayer(it.uniqueName) }
-                            println("[CLIENT_HANDLER] is room null? ${room == null}")
-                            println("[CLIENT_HANDLER] Player $nickname guessed $guess")
-                            // Fire the guess event
                             val playerGuessEvent = PlayerGuessEvent(player as GamePlayer, guess)
-                            println("[CLIENT_HANDLER] Firing PlayerGuessEvent")
                             Server.eventsManager.fireEvent(playerGuessEvent) {
                                 if (room != null && player in room.roomPlayers) {
                                     room.guess(player as GamePlayer, guess)
                                 }
-                                println("[CLIENT_HANDLER] PlayerGuessEvent fired")
                             }
                         }
                         // fire event in the correct place
@@ -271,6 +264,11 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         SERVER_AUTH -> {
                             val nickTicket = packetData["nickTicket"] as String
                             val macAddress = packetData["macAddress"] as String
+                            println("Authenticating player $nickTicket with mac address $macAddress")
+                            val isMacAddressRegistered = PlayerManager.isMacAddressRegistered(macAddress)
+                            println("Is mac address registered: $isMacAddressRegistered")
+                            val isPlayerValid = PlayerManager.isValidPlayer(nickTicket)
+                            println("Is player valid: $isPlayerValid")
                             if (PlayerManager.doAuth(nickTicket, macAddress)) {
                                 synchronized(PlayerManager) {
                                     player = PlayerManager.connect(

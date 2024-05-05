@@ -127,6 +127,7 @@ class RegisterMenuDialog(private val onSelection: suspend (KClass<out Scene>) ->
                                                 val server: Server = Config.servers.find {
                                                     it.ip  == Client.connectionManager.connectedToIP
                                                 }!!
+
                                                 Config.upsertServer(
                                                     Server(
                                                         server.name,

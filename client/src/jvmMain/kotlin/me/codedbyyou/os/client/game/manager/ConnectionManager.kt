@@ -196,9 +196,6 @@ class ConnectionManager {
                         }
                     }
                     GAME_ROUND_START -> {
-                        println("Received game round start!")
-                        println("Received game round start!")
-                        println("Received game round start!")
                         Client.gameState = GameState.PLAYING
                         KtScope.launch {
                             withContext(channelExecutor){

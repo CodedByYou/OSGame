@@ -47,12 +47,10 @@ class ServerDialog( private val onSelection: suspend (KClass<out Scene>) -> Unit
                 val status = Client.connectionManager
                     .connectTo(chosenServer!!)
                 logger.info("Status: $status")
-               //  if (status == ConnectionManager.ConnectionStatus.ALREADY_CONNECTED)
-               //     return@launch
-                logger.info("Status: $status")
                 delay(50)
                 if (chosenServer!!.psuedoName != null ) {
                     logger.info("Sending server auth packet")
+                    println(chosenServer?.psuedoName + "#" + chosenServer?.ticket)
                     Client.connectionManager.sendPacket(
                         Packet(
                             PacketType.SERVER_AUTH,

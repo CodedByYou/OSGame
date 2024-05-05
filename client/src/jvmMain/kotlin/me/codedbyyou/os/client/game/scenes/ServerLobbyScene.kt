@@ -114,7 +114,7 @@ class ServerLobbyScene(
 
         text = VectorFont.TextBlock(
             10f,
-            25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.RED)))
+            25f, mutableListOf(VectorFont.Text("${Client?.user?.psuedoName}#${Client?.user?.ticket}",24, Color.DARK_CYAN)))
 
         viewport_.update(graphics.width, graphics.height, context, true)
         if (input.isKeyJustPressed(com.lehaine.littlekt.input.Key.ESCAPE)) {

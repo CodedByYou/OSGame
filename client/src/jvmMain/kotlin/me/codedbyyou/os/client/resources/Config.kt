@@ -33,11 +33,10 @@ object Config {
 
        val ipSection = config.getSection("ip")
         for (i in ipSection.keys) {
-            println(i.toString())
-
             val ip = ipSection.getSection(i.toString())
             for (p in ip.keys) {
                 val port = ip.getSection(p.toString())
+                //print all details
                 val server = Server(
                     ip= ip.name.toString().replace("+", "."),
                     port = p.toString().toInt(),

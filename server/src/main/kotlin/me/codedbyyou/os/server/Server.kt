@@ -60,6 +60,7 @@ object Server : OSGameServer() {
         }
 
         PlayerManager
+        loadPlayerProfiles()
         val connectedIPs = mutableListOf<String>()
         socketServer = ServerSocket(serverPort)
         // maybe todo: move to a coroutine
