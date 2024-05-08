@@ -1,3 +1,4 @@
+import org.apache.tools.ant.taskdefs.condition.Os
 import com.lehaine.littlekt.gradle.texturepacker.littleKt
 import com.lehaine.littlekt.gradle.texturepacker.texturePacker
 import org.gradle.kotlin.dsl.version
@@ -58,47 +59,98 @@ tasks.test {
 
 
 kotlin {
-    jvm()
-    sourceSets{
-        val jvmMain by getting {
-            dependencies {
-                implementation("com.lehaine.littlekt:core:0.9.0")
-                implementation(project(":core"))
-                implementation(kotlin("stdlib-jdk8"))
-                implementation("dev.dejvokep:boosted-yaml:1.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+    jvm {
+        sourceSets {
+            val jvmMain by getting {
+                dependencies {
+                    implementation("com.lehaine.littlekt:core:0.9.0")
+                    implementation(project(":core"))
+                    implementation(kotlin("stdlib-jdk8"))
+                    implementation("dev.dejvokep:boosted-yaml:1.3")
+                    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+                    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+                }
             }
         }
-    }
-    jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-application {
-    mainClass.set("me.codedbyyou.os.client.MainKt")
-}
-
-
-tasks {
-
-    jar {
-        manifest{
-            attributes(
-                "Main-Class" to "me.codedbyyou.os.client.MainKt"
-            )
+        jvmToolchain {
+            languageVersion.set(JavaLanguageVersion.of(17))
         }
-    }
-    shadowJar {
-        archiveBaseName.set("OSGameClient")
-        archiveClassifier.set("")
-        archiveVersion.set("1.0-SNAPSHOT")
-        manifest {
-            attributes(
-                "Main-Class" to "me.codedbyyou.os.client.MainKt"
-            )
+        compilations {
+            val main by getting
+
+            val mainClassName = "me.codedbyyou.os.client.MainKt"
+            tasks {
+                register<Copy>("copyResources") {
+                    group = "package"
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    dependsOn(named("jvmProcessResources"))
+                    from(main.output.resourcesDir)
+                    destinationDir = File("${layout.buildDirectory.asFile.get()}/publish")
+                }
+                register<Jar>("packageFatJar") {
+                    group = "package"
+                    archiveClassifier.set("all")
+                    manifest {
+                        attributes(
+                            "Main-Class" to "me.codedbyyou.os.client.MainKt"
+                        )
+                    }
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                    dependsOn(named("jvmJar"))
+                    dependsOn(named("copyResources"))
+                    destinationDirectory.set(File("${layout.buildDirectory.asFile.get()}/publish/"))
+                    from(
+                        main.runtimeDependencyFiles.map { if (it.isDirectory) it else zipTree(it) },
+                        main.output.classesDirs
+                    )
+                    doLast {
+                        project.logger.lifecycle("[LittleKt] The packaged jar is available at: ${outputs.files.first().parent}")
+                    }
+                }
+                // workaround for https://youtrack.jetbrains.com/issue/KT-62214
+                if (Os.isFamily(Os.FAMILY_MAC) && mainClassName != null) {
+                    register<JavaExec>("jvmRun") {
+                        jvmArgs("-XstartOnFirstThread")
+                        mainClass.set(mainClassName)
+                        kotlin {
+                            val mainCompile = targets["jvm"].compilations["main"]
+                            dependsOn(mainCompile.compileAllTaskName)
+                            classpath(
+                                { mainCompile.output.allOutputs.files },
+                                (configurations["jvmRuntimeClasspath"])
+                            )
+                        }
+                    }
+                }
+            }
         }
 
+    }
+
+    application {
+        mainClass.set("me.codedbyyou.os.client.MainKt")
+    }
+//}
+
+    tasks {
+
+        jar {
+            manifest {
+                attributes(
+                    "Main-Class" to "me.codedbyyou.os.client.MainKt"
+                )
+            }
+        }
+
+        shadowJar {
+            archiveBaseName.set("OSGameClient")
+            archiveVersion.set("1.0-SNAPSHOT")
+            manifest {
+                attributes(
+                    "Main-Class" to "me.codedbyyou.os.client.MainKt"
+                )
+            }
+
+        }
     }
 }

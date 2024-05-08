@@ -104,6 +104,7 @@ class GameScene(
                                 chancesLeftString = ""
                                 Client.gameState = GameState.SERVER_JOIN_MENU
                                 leadboardData.clear()
+                                delay(500)
                                 onSelection(ServerLobbyScene::class)
                             }
                         }

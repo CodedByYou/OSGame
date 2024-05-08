@@ -17,6 +17,7 @@ import com.lehaine.littlekt.graphics.g2d.font.BitmapFont
 import com.lehaine.littlekt.graphics.g2d.font.VectorFont
 import com.lehaine.littlekt.input.Key
 import com.lehaine.littlekt.util.viewport.ExtendViewport
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.manager.TitleManager
@@ -67,16 +68,15 @@ class Game(context: Context) : Game<Scene>(context) {
     @OptIn(Experimental::class)
     override suspend fun Context.start() {
         KtScope.launch {
-            backgroundImage = context.resourcesVfs["bg.png"].readTexture()
+            backgroundImage = this@start.resourcesVfs["bg.png"].readTexture()
             font = Fonts.default
             vectorFont = Assets.vectorFont
         }
-        Assets.createInstance(context = context){}
+        Assets.createInstance(context = this) {}
 
         setSceneCallbacks(this)
         sceneGraph(this) {
-            val port : ViewportCanvasLayer
-                    = viewport {
+            val port: ViewportCanvasLayer = viewport {
                 viewport = viewport_
                 paddedContainer {
                     minWidth = this@Game.graphics.width.toFloat()
@@ -106,33 +106,35 @@ class Game(context: Context) : Game<Scene>(context) {
         addScene(
             MenuScene::class,
             MenuScene(
-            ::onSelection,
-            this ))
+                ::onSelection,
+                this
+            )
+        )
 
-        addScene(ServerMenuJoinScene::class, ServerMenuJoinScene(
-            ::onSelection,
-            this
-        ))
+        addScene(
+            ServerMenuJoinScene::class, ServerMenuJoinScene(
+                ::onSelection,
+                this
+            )
+        )
 
-        addScene(GameScene::class, GameScene(
-            ::onSelection,
-            context = this
-        ))
+        addScene(
+            GameScene::class, GameScene(
+                ::onSelection,
+                context = this
+            )
+        )
 
-        addScene(ServerLobbyScene::class, ServerLobbyScene(
-            ::onSelection,
-            context = this
-        ))
+        addScene(
+            ServerLobbyScene::class, ServerLobbyScene(
+                ::onSelection,
+                context = this
+            )
+        )
 
 
         setScene<MenuScene>()
-//        setScene<LoginScene>()
-//        setScene<ServerMenuJoinScene>()
-//        ConnectionManager.serverScreenCallBack = {
-//                setScene<ServerMenuJoinScene>()
-//        }
     }
-
     private fun Context.renderText(title: Title) {
         val elapsedTime = System.currentTimeMillis() - titleManager.getLastTitleTime()
         val fadeDuration = title.duration * 1000 // Convert fade duration to milliseconds

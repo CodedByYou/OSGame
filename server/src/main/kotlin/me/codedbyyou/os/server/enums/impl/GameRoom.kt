@@ -380,7 +380,7 @@ class GameRoom(
             winners.forEach { player ->
                 async {
                     player.sendMessage("You have won the game")
-                    sleep(200)
+                    sleep(500)
                     player as GamePlayer
                     player.sendTitle("Game Over", "You have won the game, legend!", 1f)
                     player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
@@ -398,7 +398,7 @@ class GameRoom(
             losers.forEach { player ->
                 async {
                     player.sendMessage("You have lost the game")
-                    sleep(200)
+                    sleep(500)
                     player as GamePlayer
                     player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
                     player.sendTitle("Game Over", "You have lost the game", 1f)
@@ -410,11 +410,11 @@ class GameRoom(
                     ))
                 }
             }
-
-            delay(5000)
-            roomStatus = RoomStatus.NOT_STARTED
             roomPlayers.clear()
             spectators.clear()
+            delay(3000)
+            roomStatus = RoomStatus.NOT_STARTED
+
         }
     }
 

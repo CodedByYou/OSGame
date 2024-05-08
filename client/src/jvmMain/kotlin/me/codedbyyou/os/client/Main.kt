@@ -3,6 +3,7 @@ package me.codedbyyou.os.client
 import com.lehaine.littlekt.createLittleKtApp
 import com.lehaine.littlekt.graphics.HdpiMode
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import me.codedbyyou.os.client.game.Game
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
@@ -14,7 +15,7 @@ import me.codedbyyou.os.core.interfaces.server.sendPacket
 import java.net.Socket
 import java.util.logging.Logger
 
-fun main(args: Array<String>) {
+suspend fun main(args: Array<String>) {
     val size = Config.VSIZE()
     Client
     createLittleKtApp {
