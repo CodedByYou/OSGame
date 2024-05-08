@@ -308,7 +308,6 @@ class ConnectionManager {
                     LEADERBOARD -> {
                         KtScope.launch {
                             withContext(channelExecutor){
-                                logger.info("Received leaderboard")
                                 leaderboard.send(packet)
                             }
                         }

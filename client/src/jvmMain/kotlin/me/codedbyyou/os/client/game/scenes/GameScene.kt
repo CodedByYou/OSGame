@@ -17,10 +17,7 @@ import com.lehaine.littlekt.graphics.slice
 import com.lehaine.littlekt.math.Vec2f
 import com.lehaine.littlekt.util.Signal
 import com.lehaine.littlekt.util.viewport.ExtendViewport
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newCoroutineContext
+import kotlinx.coroutines.*
 import me.codedbyyou.os.client.game.Game
 import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.manager.ConnectionManager
@@ -105,7 +102,11 @@ class GameScene(
                                 Client.gameState = GameState.SERVER_JOIN_MENU
                                 leadboardData.clear()
                                 delay(500)
-                                onSelection(ServerLobbyScene::class)
+                                KtScope.launch {
+                                    onSelection(ServerLobbyScene::class)
+                                }
+                                leaderboard.enabled = false
+                                leaderboard.visible = false
                             }
                         }
                         PacketType.GAME_ROUND_START -> {
@@ -130,7 +131,7 @@ class GameScene(
                     }
                     println(Client.connectionManager.gameSceneChannel.isClosedForReceive)
                 }
-                delay(100)
+                delay(250)
             }
         }
     }

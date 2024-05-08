@@ -45,8 +45,10 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                 val packet = Packet.fromPacket(data)
                 val packetType = packet.packetType
                 val packetData = packet.packetData
-                logger.info("Received packet type: $packetType")
-                logger.info("Received ${packetData.size} packet data")
+                if(packetType != LEADERBOARD) {
+                    logger.info("Received packet type: $packetType")
+                    logger.info("Received ${packetData.size} packet data")
+                }
                 player?.let {
                     player -> Server.lastPinged[player.uniqueName] = System.currentTimeMillis()
                 }
@@ -161,8 +163,8 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                     ROOM_FULL.sendPacket(output);
                                     return
                                 }
-
-                                room.addPlayer(player!!)
+                                if(!room.roomPlayers.contains(player!!))
+                                    room.addPlayer(player!!)
 
                                 gameRoomID = gameID
                                 PLAYER_ROOM_JOIN

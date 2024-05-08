@@ -101,12 +101,13 @@ class InGameMenuDialog(
                                     Client.connectionManager.sendPacket(
                                         PacketType.GAME_LEAVE.toPacket()
                                     )
-                                    delay(500)
+                                    delay(1000)
                                 }
 
+
+                                onSelection.invoke(MenuScene::class)
                                 if (Client.connectionManager.isConnected())
                                     Client.connectionManager.disconnect()
-                                onSelection.invoke(MenuScene::class)
                             }
                         }
                     }

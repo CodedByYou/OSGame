@@ -281,21 +281,6 @@ class GameRoom(
             if (currentRound == roundsNumber) {
                 end()
             } else {
-//                roomPlayers.forEach { player ->
-//                player.sendMessage("Round $currentRound")
-//                player.sendMessage("Average: $average")
-//                player.sendMessage("Two Thirds: $twoThirds")
-//                player.sendMessage("Closest: $closest")
-//                player.sendMessage("Winners: ${winners.joinToString { it.uniqueName }}")
-//                player as GamePlayer
-//                player.addPacket(PacketType.GAME_ROUND_INFO.toPacket(mapOf(
-//                    "round" to currentRound,
-//                    "average" to average,
-//                    "two thirds" to twoThirds,
-//                    "closest" to closest,
-//                    "winners" to winners.joinToString { it.uniqueName }
-//                )))
-//            }
                 currentGuesses.clear()
                 roomPlayers.forEach { player ->
                     Executors.newSingleThreadExecutor().execute {
@@ -401,6 +386,7 @@ class GameRoom(
                     sleep(500)
                     player as GamePlayer
                     player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
+                    sleep(500)
                     player.sendTitle("Game Over", "You have lost the game", 1f)
                     sleep(1000)
                     player.addPacket(PacketType.GAME_END.toPacket(
