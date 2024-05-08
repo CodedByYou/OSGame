@@ -6,6 +6,7 @@ import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
+import me.codedbyyou.os.core.models.Title
 import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.enums.Game
 import me.codedbyyou.os.server.player.GamePlayer
@@ -258,7 +259,7 @@ class GameRoom(
                 async {
                     player.sendMessage("You have lost the round")
                     player as GamePlayer
-                    player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "round")))
+                    player.addPacket(PacketType.GAME_ROUND_END.toPacket(mapOf("type" to "round")))
                     delay(500)
                     player.sendTitle("You have lost the round", "Better luck next time", 1f)
 
@@ -268,8 +269,8 @@ class GameRoom(
                     roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
                     if (roomPlayerChances[player] == 0) {
                         delay(500)
-                        player.sendMessage("You are now a spectator")
-                        player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
+                        player.sendTitle("You have been eliminated", "You have run out of chances", 1f)
+//                        player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
                         turnToSpectator(player)
                     }
                 }
@@ -362,7 +363,8 @@ class GameRoom(
         coroutineScope.launch {
             val winners = roundWinners.groupBy { it }.maxByOrNull { it.value.size }!!.value
 
-            winners.forEach { player ->
+            // Launching coroutines for winners
+            val winnerJobs = winners.map { player ->
                 async {
                     player.sendMessage("You have won the game")
                     sleep(500)
@@ -380,12 +382,10 @@ class GameRoom(
 
             // Sending losing packets
             val losers = roomPlayers.toSet() - winners.toSet()
-            losers.forEach { player ->
+            val loserJobs = losers.map { player ->
                 async {
                     player.sendMessage("You have lost the game")
-                    sleep(500)
                     player as GamePlayer
-                    player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket())
                     sleep(500)
                     player.sendTitle("Game Over", "You have lost the game", 1f)
                     sleep(1000)
@@ -396,12 +396,19 @@ class GameRoom(
                     ))
                 }
             }
+
+            // Waiting for all coroutines to complete
+            winnerJobs.awaitAll()
+            loserJobs.awaitAll()
+
+            // Clearing players and spectators after all coroutines are completed
             roomPlayers.clear()
             spectators.clear()
-            delay(3000)
-            roomStatus = RoomStatus.NOT_STARTED
-
         }
+
+        roomPlayers.clear()
+        spectators.clear()
+        roomStatus = RoomStatus.NOT_STARTED
     }
 
 }

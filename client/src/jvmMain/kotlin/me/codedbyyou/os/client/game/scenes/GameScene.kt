@@ -89,6 +89,7 @@ class GameScene(
 
                             loadLeaderboardSignal.emit()
                             gameStatus = "Game Ended"
+                            Client.gameState = GameState.SERVER_JOIN_MENU
                             KtScope.launch {
                                 var countDown = 4
                                 while (countDown > 0){
@@ -99,14 +100,13 @@ class GameScene(
                                 }
                                 gameStatus = "Starting Soon"
                                 chancesLeftString = ""
-                                Client.gameState = GameState.SERVER_JOIN_MENU
+
                                 leadboardData.clear()
-                                delay(500)
-                                KtScope.launch {
-                                    onSelection(ServerLobbyScene::class)
-                                }
                                 leaderboard.enabled = false
                                 leaderboard.visible = false
+                                delay(500)
+                                onSelection(ServerLobbyScene::class)
+
                             }
                         }
                         PacketType.GAME_ROUND_START -> {

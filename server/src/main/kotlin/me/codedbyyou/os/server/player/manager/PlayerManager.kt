@@ -50,7 +50,7 @@ object PlayerManager {
 
                         }
                     }
-                    delay(50)
+                    delay(100)
                 }
             }
         }.start()
