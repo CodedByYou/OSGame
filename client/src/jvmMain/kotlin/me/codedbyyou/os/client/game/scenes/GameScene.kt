@@ -104,13 +104,12 @@ class GameScene(
                                 }
                                 gameStatus = "Starting Soon"
                                 chancesLeftString = ""
-
+                                lastTwoThirds = -1.0
                                 leadboardData.clear()
                                 leaderboard.enabled = false
                                 leaderboard.visible = false
-                                delay(500)
+                                delay(1200)
                                 onSelection(ServerLobbyScene::class)
-
                             }
                         }
                         PacketType.GAME_ROUND_START -> {
@@ -126,13 +125,13 @@ class GameScene(
                             guessingButton.visible = true
                         }
                         PacketType.GAME_PLAYER_WIN ->{
-
+                            Assets.correct.play(1f);
                         }
                         PacketType.GAME_ROUND_END -> {
                             gameStatus = "Round Ended"
                         }
                         PacketType.GAME_PLAYER_GUESS -> {
-//                            some player guessed
+
                         }
                         else -> {
                             println("Unhandled packet type ${packet.packetType}")

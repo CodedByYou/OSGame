@@ -4,6 +4,7 @@ import com.sun.security.ntlm.Client
 import kotlinx.coroutines.*
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.Packet
+import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
 import me.codedbyyou.os.server.managers.TicketManager
@@ -44,7 +45,8 @@ object PlayerManager {
                         val (player, packet) = playerPackets.poll()
                         playerDataProcessors[player.uniqueName].let {
                             packet.sendPacket(it!!)
-                            logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
+                            if (packet.packetType != PacketType.LEADERBOARD)
+                                logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
                         }
                     }
                     delay(100)
