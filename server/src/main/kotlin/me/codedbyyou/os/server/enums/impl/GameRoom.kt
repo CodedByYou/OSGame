@@ -149,8 +149,7 @@ class GameRoom(
      * @see GamePlayer
      */
     override suspend fun start() {
-        coroutineScope {
-            launch {
+            GlobalScope.launch {
                 roomStatus = RoomStatus.STARTING
                 repeat(3) {
                     roomPlayers.forEach { player ->
@@ -164,6 +163,7 @@ class GameRoom(
                         player as GamePlayer
                         player.sendMessage("Game has started")
                         player.addPacket(PacketType.GAME_START.toPacket())
+                        sleep(500)
                         player.sendTitle("Game has started", "Good luck!", 1f)
                         println("Game has started was sent to ${player.uniqueName}")
                         sleep(1000)
@@ -180,7 +180,6 @@ class GameRoom(
                 }
                 roomStatus = RoomStatus.STARTED
             }
-        }
     }
 
     /**
@@ -239,15 +238,14 @@ class GameRoom(
         val closest = guesses.minByOrNull { abs(it - twoThirds) }!!
         val winners = currentGuesses.filter { it.value == closest }.keys
 
-        val coroutineScope = CoroutineScope(Dispatchers.Default)
 
-        coroutineScope.launch {
+        Executors.newSingleThreadExecutor().execute {
             val winnerJobs = winners.map { player ->
-                async {
+                Executors.newSingleThreadExecutor().execute {
                     player as GamePlayer
                     player.sendMessage("You have won the round")
                     player.addPacket(PacketType.GAME_ROUND_END.toPacket())
-                    delay(1000)
+                    sleep(1000)
                     player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket(mapOf("type" to "round")))
                     player.sendTitle("You have won the round", "Congratulations", 1f)
                     roundWinners.add(player)
@@ -258,11 +256,11 @@ class GameRoom(
             }
 
             val loserJobs = (roomPlayers.toSet() - winners.toSet()).map { player ->
-                async {
+                Executors.newSingleThreadExecutor().execute {
                     player.sendMessage("You have lost the round")
                     player as GamePlayer
                     player.addPacket(PacketType.GAME_ROUND_END.toPacket(mapOf("type" to "round")))
-                    delay(500)
+                    sleep(500)
                     player.sendTitle("You have lost the round", "Better luck next time", 1f)
 
                     roundResults[player]?.add(4) ?: run {
@@ -270,7 +268,7 @@ class GameRoom(
                     }
                     roomPlayerChances[player] = roomPlayerChances[player]!!.dec()
                     if (roomPlayerChances[player] == 0) {
-                        delay(500)
+                        sleep(500)
                         player.sendTitle("You have been eliminated", "You have run out of chances", 1f)
 //                        player.addPacket(PacketType.GAME_PLAYER_LOSE.toPacket(mapOf("type" to "game")))
                         turnToSpectator(player)
@@ -278,8 +276,7 @@ class GameRoom(
                 }
             }
 
-            winnerJobs.awaitAll()
-            loserJobs.awaitAll()
+            sleep(1500)
 
             if (currentRound == roundsNumber) {
                 end()
@@ -360,20 +357,18 @@ class GameRoom(
         val sorted = roundResults.toList().sortedByDescending { it.second.sum() }
         Server.updateLeaderboard(sorted.map { it.first.uniqueName to it.second.sum() })
         val leaderboard = sorted.joinToString { "${it.first.uniqueName}:${it.second.sum()}" }
-        val coroutineScope = CoroutineScope(Dispatchers.Default)
-
-        coroutineScope.launch {
+        Executors.newSingleThreadExecutor().execute {
             val winners = roundWinners.groupBy { it }.maxByOrNull { it.value.size }!!.value
 
             // Launching coroutines for winners
-            val winnerJobs = winners.map { player ->
-                async {
+            winners.forEach { player ->
+                Executors.newSingleThreadExecutor().execute {
                     player.sendMessage("You have won the game")
                     sleep(500)
                     player as GamePlayer
                     player.sendTitle("Game Over", "You have won the game, legend!", 1f)
                     player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
-                    sleep(500)
+                    sleep(1000)
                     player.addPacket(PacketType.GAME_END.toPacket(
                         mapOf(
                             "leaderboard" to leaderboard
@@ -384,8 +379,8 @@ class GameRoom(
 
             // Sending losing packets
             val losers = roomPlayers.toSet() - winners.toSet()
-            val loserJobs = losers.map { player ->
-                async {
+            losers.forEach { player ->
+                Executors.newSingleThreadExecutor().execute {
                     player.sendMessage("You have lost the game")
                     player as GamePlayer
                     sleep(500)
@@ -399,18 +394,18 @@ class GameRoom(
                 }
             }
 
-            // Waiting for all coroutines to complete
-            winnerJobs.awaitAll()
-            loserJobs.awaitAll()
-
+            sleep(2000)
             // Clearing players and spectators after all coroutines are completed
             roomPlayers.clear()
             spectators.clear()
+            currentRound = 0
+            currentGuesses.clear()
+            roundResults.clear()
+            roundWinners.clear()
+            sleep(4000)
+            roomStatus = RoomStatus.NOT_STARTED
         }
 
-        roomPlayers.clear()
-        spectators.clear()
-        roomStatus = RoomStatus.NOT_STARTED
     }
 
 }

@@ -120,6 +120,9 @@ class GameScene(
                             guessingButton.enabled = true
                             guessingButton.visible = true
                         }
+                        PacketType.GAME_PLAYER_WIN ->{
+
+                        }
                         PacketType.GAME_ROUND_END -> {
                             gameStatus = "Round Ended"
                         }
