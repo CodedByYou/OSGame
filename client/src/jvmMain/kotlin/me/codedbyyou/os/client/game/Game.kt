@@ -21,6 +21,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.manager.TitleManager
+import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.scenes.GameScene
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
@@ -87,8 +88,6 @@ class Game(context: Context) : Game<Scene>(context) {
 
             this@Game.context.onRender {
                 camera.update()
-                if (input.isKeyJustPressed(Key.M))
-                    Config.musicMultiplier = if (Config.musicMultiplier > 0f) 0f else 1f
                 if (backgroundImage == null)
                     return@onRender
 

@@ -20,9 +20,11 @@ import com.lehaine.littlekt.input.Key
 import com.lehaine.littlekt.math.Vec2f
 import com.lehaine.littlekt.util.signal
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.serialization.json.Json
 import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.manager.ConnectionManager
+import me.codedbyyou.os.client.game.manager.TitleManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.scenes.GameScene
 import me.codedbyyou.os.client.resources.Assets
@@ -34,6 +36,7 @@ import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.sendPacket
 import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
+import me.codedbyyou.os.core.models.Title
 import me.codedbyyou.os.core.models.deserialized
 import java.awt.Container
 import java.lang.Thread.sleep
@@ -122,9 +125,9 @@ class ServerInfoDialog() : PaddedContainer() {
 
 }
 
-fun Node.chatBox(callback: ChatBox.() -> Unit = {}) = node(ChatBox(), callback)
+fun Node.chatBox(channel: Channel<Packet>, callback: ChatBox.() -> Unit = {}) = node(ChatBox(channel), callback)
 
-class ChatBox() : PaddedContainer() {
+class ChatBox(private val chatChannel: Channel<Packet>) : PaddedContainer() {
     private val chatBox: ScrollContainer
     private val chatInput: LineEdit
     private var chatBoxContent: VBoxContainer
@@ -202,7 +205,7 @@ class ChatBox() : PaddedContainer() {
             withContext(newSingleThreadContext("ChatBoxThread")){
                 while (true){
                     delay(500)
-                    val packet = Client.connectionManager.chatChannel.receive()
+                    val packet = chatChannel.receive()
                     if (packet.packetType == PacketType.MESSAGE) {
                         val message = packet.packetData["message"].toString()
                         chatBoxContent.apply{
@@ -256,7 +259,6 @@ class RoomInfoDialog(
 
                 column {
                     separation = 20
-
                     roomList =column {
                         separation = 10
                         column {
@@ -280,21 +282,13 @@ class RoomInfoDialog(
             }
         }
         updateRooms += {
-            Client.connectionManager.sendPacket(
-                Packet(
-                    PacketType.GAMES_LIST
-                )
-            )
             KtScope.launch {
                 withContext(newSingleThreadAsyncContext()) {
-                    val packet = Client.connectionManager.gameChannel.receive()
-                    if (packet.packetType == PacketType.GAMES_LIST) {
-                        val roomListData =
-                            packet.packetData["games"].toString().deserialized()
-                        rooms.clear()
-                        rooms += roomListData
-                        renderRooms.emit()
-                    }
+                    Client.connectionManager.sendPacket(
+                        Packet(
+                            PacketType.GAMES_LIST
+                        )
+                    )
                 }
             }
         }
@@ -374,32 +368,6 @@ class RoomInfoDialog(
                                                         mapOf("room" to room.roomNumber)
                                                     )
                                                 )
-                                                withContext(newSingleThreadAsyncContext()) {
-                                                    println("Waiting for response..")
-                                                    val packet = Client.connectionManager.gameChannel.receive()
-                                                    println("Received response..")
-                                                    println(packet.packetType.name)
-                                                    if (packet.packetType == PacketType.GAME_JOIN) {
-                                                        println("Joining room ${room.roomNumber}")
-                                                        KtScope.launch {
-                                                            onSelection.invoke(GameScene::class)
-                                                        }
-                                                    } else if (packet.packetType == PacketType.ROOM_FULL){
-                                                        println("Room is full") // better handling
-                                                        Client.connectionManager.sendPacket(
-                                                            PacketType.MESSAGE.toPacket(
-                                                                mapOf("message" to "Room is full")
-                                                            )
-                                                        )
-                                                    } else if (packet.packetType == PacketType.NO_SUCH_ROOM){
-                                                        println("No such room")
-                                                        Client.connectionManager.sendPacket(
-                                                            PacketType.MESSAGE.toPacket(
-                                                                mapOf("message" to "No such room")
-                                                            )
-                                                        )
-                                                    }
-                                                }
                                             }
                                         }
                                     }
@@ -414,12 +382,46 @@ class RoomInfoDialog(
         KtScope.launch {
             withContext(newSingleThreadAsyncContext()){
                 while (true){
-                    if (isRoomInfoDialogVisible) {
-                        if (Client.connectionManager.isConnected())
-                            updateRooms.emit()
-                    }
+                    if (Client.connectionManager.isConnected())
+                        updateRooms.emit()
                     delay(5000)
                 }
+            }
+        }
+        KtScope.launch {
+            withContext(newSingleThreadAsyncContext()){
+                while (true){
+                    val packet = Client.connectionManager.gameChannel.receive()
+                    if (isRoomInfoDialogVisible.not())
+                        continue // i think this is better, just not to fill up the channel with unnecessary packets
+                    when (packet.packetType) {
+                        PacketType.GAMES_LIST -> {
+                            val roomListData =
+                                packet.packetData["games"].toString().deserialized()
+                            rooms.clear()
+                            rooms += roomListData
+                            renderRooms.emit()
+                        }
+                        PacketType.GAME_JOIN -> {
+                            KtScope.launch {
+                                onSelection.invoke(GameScene::class)
+                            }
+                        }
+                        PacketType.ROOM_FULL -> {
+                            println("Room is full") // better handling
+                            TitleManager.addTitle(Title("You can't join this room", "room is full",2f))
+                        }
+                        PacketType.NO_SUCH_ROOM -> {
+                            println("No such room")
+                            TitleManager.addTitle(Title("You can't join this room", "room does not exist",2f))
+                        }
+                        else -> {
+                            println(packet.packetType.name + " not handled in game channel.")
+
+                        }
+                    }
+                }
+                delay(100)
             }
         }
     }

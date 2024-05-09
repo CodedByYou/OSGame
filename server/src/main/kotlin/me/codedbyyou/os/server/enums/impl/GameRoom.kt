@@ -371,7 +371,7 @@ class GameRoom(
                     player as GamePlayer
                     player.sendTitle("Game Over", "You have won the game, legend!", 1f)
                     player.addPacket(PacketType.GAME_PLAYER_WIN.toPacket())
-                    sleep(1000)
+                    sleep(500)
                     player.addPacket(PacketType.GAME_END.toPacket(
                         mapOf(
                             "leaderboard" to leaderboard

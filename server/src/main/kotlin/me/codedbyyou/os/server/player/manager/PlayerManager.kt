@@ -43,11 +43,8 @@ object PlayerManager {
                     while (playerPackets.isNotEmpty()) {
                         val (player, packet) = playerPackets.poll()
                         playerDataProcessors[player.uniqueName].let {
-                            synchronized(it!!) {
-                                packet.sendPacket(it!!)
-                                logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
-                            }
-
+                            packet.sendPacket(it!!)
+                            logger.info("Packet [${packet.packetType}] sent to ${player.uniqueName}")
                         }
                     }
                     delay(100)

@@ -58,6 +58,7 @@ class ConnectionManager {
      * this will make sure other channels are not blocked by the chat traffic.
      */
     val chatChannel : Channel<Packet> = Channel()
+    val gameChatChannel : Channel<Packet> = Channel()
 
     /**
      * Idea:
@@ -167,6 +168,7 @@ class ConnectionManager {
                             withContext(channelExecutor){
                                 logger.info("Message received: ${packetData["message"]}")
                                 chatChannel.send(packet)
+                                gameChatChannel.send(packet)
                             }
                         }
                     }
@@ -285,8 +287,10 @@ class ConnectionManager {
                             withContext(channelExecutor){
                                 logger.info("Received player game join packet")
                                 println("Received player game join packet")
-                                Client.gameState = GameState.PLAYING
-                                gameChannel.send(packet)
+                                if (Client.gameState == GameState.MENU) {
+                                    Client.gameState = GameState.PLAYING
+                                    gameChannel.send(packet)
+                                }
                             }
                         }
                     }

@@ -19,6 +19,7 @@ import com.lehaine.littlekt.util.viewport.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.codedbyyou.os.client.game.Game
+import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.ui.dialog.*
@@ -102,7 +103,7 @@ class ServerLobbyScene(
 
             serverList = serverInfoDialog()
 
-            chatBox()
+            chatBox(Client.connectionManager.chatChannel)
             muteBox()
             info = roomInfoDialog(onSelection, context) {}
             exitMenuSignal += {
