@@ -127,8 +127,8 @@ class ServerLobbyScene(
 
     override suspend fun Context.show() {
         graph.initialize()
-        info!!.show();
-        info!!.updateRooms.emit();
+        info!!.show()
+        info!!.updateRooms.emit()
         graph.root.enabled = true
         vectorFont.resize(context.graphics.width, context.graphics.height, this)
         graph.resize(graphics.width, graphics.height)

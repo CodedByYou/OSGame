@@ -43,6 +43,7 @@ import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import javax.naming.ldap.Control
 import kotlin.reflect.KClass
+import kotlin.time.Duration
 
 fun Node.serverInfoDialog(callback: ServerInfoDialog.() -> Unit = {}) = node (ServerInfoDialog(), callback)
 
@@ -392,7 +393,7 @@ class RoomInfoDialog(
             withContext(newSingleThreadAsyncContext()){
                 while (true){
                     val packet = Client.connectionManager.gameChannel.receive()
-                    if (isRoomInfoDialogVisible.not())
+                    if (Client.gameState == GameState.PLAYING)
                         continue // i think this is better, just not to fill up the channel with unnecessary packets
                     when (packet.packetType) {
                         PacketType.GAMES_LIST -> {
@@ -403,9 +404,7 @@ class RoomInfoDialog(
                             renderRooms.emit()
                         }
                         PacketType.GAME_JOIN -> {
-                            KtScope.launch {
-                                onSelection.invoke(GameScene::class)
-                            }
+                            onSelection.invoke(GameScene::class)
                         }
                         PacketType.ROOM_FULL -> {
                             println("Room is full") // better handling
@@ -425,6 +424,7 @@ class RoomInfoDialog(
             }
         }
     }
+
 
     fun show() {
         visible = true

@@ -75,6 +75,8 @@ class GameScene(
                     when(packet.packetType){
                         PacketType.GAME_START -> {
                             gameStatus = "Game Started"
+                            leaderboard.enabled = false
+                            leaderboard.visible = false
                         }
                         PacketType.GAME_END -> {
                             leaderboard.enabled = true
@@ -218,7 +220,7 @@ class GameScene(
                 marginBottom = 10f
             }
             serverList = serverInfoDialog()
-            chatBox()
+            chatBox(Client.connectionManager.gameChatChannel)
             muteBox()
             exitMenuSignal+= {
                 if (exitMenu != null) {

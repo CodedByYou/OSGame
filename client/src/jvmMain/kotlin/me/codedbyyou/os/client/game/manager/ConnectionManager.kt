@@ -69,7 +69,7 @@ class ConnectionManager {
     /**
      * GameScene Channel
      */
-    val gameSceneChannel : Channel<Packet> = Channel(Channel.UNLIMITED)
+    val gameSceneChannel : Channel<Packet> = Channel()
 
     /**
      * Leaderboard Channel
@@ -260,7 +260,7 @@ class ConnectionManager {
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received player win packet")
-                                gameChannel.send(packet)
+                                gameSceneChannel.send(packet)
                             }
                         }
                     }
@@ -268,7 +268,7 @@ class ConnectionManager {
                         KtScope.launch {
                             withContext(channelExecutor){
                                 logger.info("Received player lose packet")
-                                gameChannel.send(packet)
+                                gameSceneChannel.send(packet)
                             }
                         }
                     }
@@ -287,7 +287,7 @@ class ConnectionManager {
                             withContext(channelExecutor){
                                 logger.info("Received player game join packet")
                                 println("Received player game join packet")
-                                if (Client.gameState == GameState.MENU) {
+                                if (Client.gameState != GameState.PLAYING) {
                                     Client.gameState = GameState.PLAYING
                                     gameChannel.send(packet)
                                 }

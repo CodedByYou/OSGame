@@ -1,5 +1,7 @@
 package me.codedbyyou.os.server.player
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import me.codedbyyou.os.core.interfaces.player.Player
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.sendPacket
@@ -21,11 +23,11 @@ import me.codedbyyou.os.server.events.enums.WinLoseType
 import me.codedbyyou.os.server.exceptions.TicketOutOfBoundsException
 import java.util.concurrent.Executors
 
-class GamePlayerClientHandler(val socket: Socket) : Runnable {
+class GamePlayerClientHandler(private val socket: Socket) : Runnable {
     private val logger = Server.logger
     private var nickname: String = ""
     private var ticket: String = ""
-    private var player: Player? = null
+    private var player: GamePlayer? = null
     private var gameRoomID: Int = -1
 
     override fun run() {
@@ -136,22 +138,23 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         }
 //                    PacketPrefix.PLAYER_INFO ->
                         ROOM_INFO -> {
+                            // old unused code
                             val message = data.substring(data.indexOf("]") + 1)
                             val roomNumber = message.toInt()
                             val room = Server.gameManager.getRoom(roomNumber)
                             if (room != null) {
-                                ROOM_INFO
-                                    .toPacket(
-                                        mapOf(
-                                            "room" to room.toGameRoomInfo()
-                                        )
-                                    ).sendPacket(output)
+                                player?.addPacket(ROOM_INFO.toPacket(
+                                    mapOf(
+                                        "room" to room.toGameRoomInfo()
+                                    )
+                                ))
                             } else {
-                                NO_SUCH_ROOM.sendPacket(output)
+                                player?.addPacket(NO_SUCH_ROOM.toPacket())
                             }
                         }
 
                         PLAYER_ROOM_JOIN -> {
+                            // old unused code
                             // get game id, we already have the player id saved in this thread
                             val message = data.substring(data.indexOf("]") + 1)
                             // gameID should be the first part of the message
@@ -169,23 +172,6 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                 gameRoomID = gameID
                                 PLAYER_ROOM_JOIN
                                     .sendPacket(output)
-                                val games = Server.gameManager.getRooms()
-                                    .map { it.toGameRoomInfo() }
-                                PlayerManager.getOnlinePlayers().forEach {
-                                    Executors.newSingleThreadExecutor().submit {
-                                        if (Server.gameManager.getRoomByPlayer(it.uniqueName) == null) {
-                                            it as GamePlayer
-                                            it.addPacket(
-                                                GAMES_LIST
-                                                    .toPacket(
-                                                        mapOf(
-                                                            "games" to games.serialized()
-                                                        )
-                                                    )
-                                            )
-                                        }
-                                    }
-                                }
                             } else {
                                 NO_SUCH_ROOM.sendPacket(output)
                             }
@@ -194,6 +180,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                         GAME_PLAYER_LEAVE -> {
                             val message = data.substring(data.indexOf("]") + 1)
                             logger.info("Player $nickname has left the game: $message")
+                            gameRoomID = -1
                             // broadcast to all players that player has left
                             // remove player from game
                             // handle game leave event
@@ -208,19 +195,18 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             val room = player?.let { Server.gameManager.getRoomByPlayer(it.uniqueName) }
                             val playerGuessEvent = PlayerGuessEvent(player as GamePlayer, guess)
                             Server.eventsManager.fireEvent(playerGuessEvent) {
-                                if (room != null && player in room.roomPlayers) {
+                                if (room != null && (player as Player) in room.roomPlayers) {
                                     room.guess(player as GamePlayer, guess)
                                 }
                             }
                         }
                         LEADERBOARD -> {
                             val leaderboard = Server.getLeaderboard()
-                            LEADERBOARD
-                                .toPacket(
-                                    mapOf(
-                                        "leaderboard" to leaderboard.joinToString { "${it.first}:${it.second}" }
-                                    )
-                                ).sendPacket(output)
+                            player?.addPacket(LEADERBOARD.toPacket(
+                                mapOf(
+                                    "leaderboard" to leaderboard.joinToString { "${it.first}:${it.second}" }
+                                )
+                            ))
                         }
                         GAMES_LIST -> {
                             logger.info("Preparing game list")
@@ -240,15 +226,37 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             val roomNumber = packetData["room"].toString().toInt()
                             val room = Server.gameManager.getRoom(roomNumber)
                             if (room != null) {
-                                if (room.isFull()) {
-                                    ROOM_FULL.sendPacket(output)
-                                    return
+                                GlobalScope.launch {
+                                    if (room.isFull()) {
+                                        ROOM_FULL.sendPacket(output)
+                                        return@launch
+                                    }
+                                    if (!room.roomPlayers.contains(player!!)) {
+                                        room.addPlayer(player!!)
+                                        gameRoomID = roomNumber
+                                        player!!.addPacket(GAME_JOIN.toPacket())
+                                        val games = Server.gameManager.getRooms()
+                                            .map { it.toGameRoomInfo() }
+                                        PlayerManager.getOnlinePlayers().forEach {
+                                            Executors.newSingleThreadExecutor().submit {
+                                                if (Server.gameManager.getRoomByPlayer(it.uniqueName) == null) {
+                                                    it as GamePlayer
+                                                    it.addPacket(
+                                                        GAMES_LIST
+                                                            .toPacket(
+                                                                mapOf(
+                                                                    "games" to games.serialized()
+                                                                )
+                                                            )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
-                                room.addPlayer(player!!)
-                                gameRoomID = roomNumber
-                                GAME_JOIN.sendPacket(output)
+
                             } else {
-                                NO_SUCH_ROOM.sendPacket(output)
+                                player!!.addPacket(NO_SUCH_ROOM.toPacket())
                             }
                         }
                         GAME_LEAVE -> {
@@ -257,9 +265,9 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                             if (room != null) {
                                 room.removePlayer(player!!)
                                 gameRoomID = -1
-                                GAME_LEAVE.sendPacket(output)
+                                player!!.addPacket(GAME_LEAVE.toPacket())
                             } else {
-                                NO_SUCH_ROOM.sendPacket(output)
+                                player!!.addPacket(NO_SUCH_ROOM.toPacket())
                             }
                         }
                         GAME_CHAT -> TODO()
@@ -291,7 +299,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                         socket.inetAddress.hostAddress.toString(),
                                         macAddress,
                                         output
-                                    )
+                                    ) as GamePlayer
                                     this.nickname = nickTicket
                                     SERVER_AUTH_SUCCESS.sendPacket(output)
                                     PlayerManager.broadcastMessage("$nickTicket has joined the server")
@@ -319,7 +327,7 @@ class GamePlayerClientHandler(val socket: Socket) : Runnable {
                                         output
                                     )
 
-                                    player = PlayerManager.getPlayer("$pseudoName#$ticket")
+                                    player = PlayerManager.getPlayer("$pseudoName#$ticket") as GamePlayer
                                     this.nickname = "$pseudoName#$ticket"
                                     logger.info("Sending Packet: $SERVER_REGISTER_SUCCESS")
                                     Packet(SERVER_REGISTER_SUCCESS, mapOf("ticket" to ticket))

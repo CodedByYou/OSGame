@@ -93,6 +93,8 @@ class GameRoom(
         GlobalScope.launch {
             roomPlayers.forEach { roomPlayer ->
                 Executors.newSingleThreadExecutor().execute {
+                    if (roomPlayer == player)
+                        sleep(500)
                     roomPlayer.sendMessage("Player ${player.uniqueName} has joined the room")
                 }
             }
