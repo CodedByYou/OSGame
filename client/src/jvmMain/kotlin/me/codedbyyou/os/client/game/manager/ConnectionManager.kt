@@ -287,10 +287,8 @@ class ConnectionManager {
                             withContext(channelExecutor){
                                 logger.info("Received player game join packet")
                                 println("Received player game join packet")
-                                if (Client.gameState != GameState.PLAYING) {
-                                    Client.gameState = GameState.PLAYING
-                                    gameChannel.send(packet)
-                                }
+                                Client.gameState = GameState.PLAYING
+                                gameChannel.send(packet)
                             }
                         }
                     }

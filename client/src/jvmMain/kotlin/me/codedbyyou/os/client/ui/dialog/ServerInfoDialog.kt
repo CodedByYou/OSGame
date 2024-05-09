@@ -393,8 +393,8 @@ class RoomInfoDialog(
             withContext(newSingleThreadAsyncContext()){
                 while (true){
                     val packet = Client.connectionManager.gameChannel.receive()
-                    if (Client.gameState == GameState.PLAYING)
-                        continue // i think this is better, just not to fill up the channel with unnecessary packets
+                    println("Before if statement")
+                    println("Received packet ${packet.packetType} in game channel in server room info dialog.")
                     when (packet.packetType) {
                         PacketType.GAMES_LIST -> {
                             val roomListData =
@@ -404,7 +404,10 @@ class RoomInfoDialog(
                             renderRooms.emit()
                         }
                         PacketType.GAME_JOIN -> {
-                            onSelection.invoke(GameScene::class)
+                            KtScope.launch {
+                                println("Switching to game scene")
+                                onSelection.invoke(GameScene::class)
+                            }
                         }
                         PacketType.ROOM_FULL -> {
                             println("Room is full") // better handling
@@ -418,9 +421,11 @@ class RoomInfoDialog(
                             println(packet.packetType.name + " not handled in game channel.")
 
                         }
+
                     }
+                    sleep(100)
                 }
-                delay(100)
+
             }
         }
     }
