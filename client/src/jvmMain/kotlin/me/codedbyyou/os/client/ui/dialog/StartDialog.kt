@@ -7,6 +7,7 @@ import com.lehaine.littlekt.graph.node.resource.HAlign
 import com.lehaine.littlekt.graph.node.node
 import com.lehaine.littlekt.graph.node.ui.*
 import com.lehaine.littlekt.util.signal
+import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.soundButton

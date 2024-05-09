@@ -7,6 +7,8 @@ import kotlinx.coroutines.channels.Channel
 import me.codedbyyou.os.client.game.enums.GameState
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.game.scenes.MenuScene
+import me.codedbyyou.os.client.resources.Assets
+import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.dialog.Server
 import me.codedbyyou.os.core.interfaces.server.Packet
 import me.codedbyyou.os.core.interfaces.server.PacketType.*
@@ -181,7 +183,13 @@ class ConnectionManager {
                                 } catch (e: Exception) {
                                     1f
                                 }
-                                TitleManager.addTitle(Title(packetData["title"].toString(), packetData["subtitle"].toString(), duration = duartion))
+                                val title = Title(packetData["title"].toString(), packetData["subtitle"].toString(), duration = duartion)
+                                TitleManager.addTitle(title)
+                                if(title.subtitle.contains("Better luck")){
+                                    KtScope.launch {
+                                        Assets.fail.play(Config.sfxMultiplier)
+                                    }
+                                }
                             }
                         }
                     }

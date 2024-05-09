@@ -261,10 +261,9 @@ class GameRoom(
                 Executors.newSingleThreadExecutor().execute {
                     player.sendMessage("You have lost the round")
                     player as GamePlayer
-                    player.addPacket(PacketType.GAME_ROUND_END.toPacket(mapOf("type" to "round")))
+                    player.addPacket(PacketType.GAME_ROUND_END.toPacket(mapOf("type" to "round", "isLoser" to "true")))
                     sleep(500)
                     player.sendTitle("You have lost the round", "Better luck next time", 1f)
-
                     roundResults[player]?.add(4) ?: run {
                         roundResults[player] = mutableListOf(4)
                     }

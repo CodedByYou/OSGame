@@ -38,6 +38,9 @@ class Assets private constructor(context: Context) : Disposable {
 //    private val sfxWarning: AudioClip by assets.load(context.resourcesVfs["sfx/warning0.wav"])
     private val music: AudioStream by assets.load(context.resourcesVfs["sfx/c418_mc_music.wav"])
     private val correct: AudioClip by assets.load(context.resourcesVfs["sfx/correct-answer.wav"])
+    private val gameStart: AudioClip by assets.load(context.resourcesVfs["sfx/campana.wav"])
+    private val intro : AudioClip by assets.load(context.resourcesVfs["sfx/intro.wav"])
+    private val fail  : AudioClip by assets.load(context.resourcesVfs["sfx/fail.wav"])
     private val font: TtfFont by assets.load(context.resourcesVfs["display1.ttf"])
     private val bitmapFont: BitmapFont by assets.load(context.resourcesVfs["display.fnt"], BitmapFontAssetParameter())
     private val vectorFont: VectorFont by lazy { VectorFont(font).also { it.prepare(context) }}
@@ -117,6 +120,9 @@ class Assets private constructor(context: Context) : Disposable {
         val sfxSelect get() = INSTANCE.sfxSelect
 //        val sfxWarning get() = INSTANCE.sfxWarning
         val correct get() = INSTANCE.correct
+        val intro get() = INSTANCE.intro
+        val fail get() = INSTANCE.fail
+        val gameStart get() = INSTANCE.gameStart
         val vectorFont get() = INSTANCE.vectorFont
         val bitmapFont get() = INSTANCE.bitmapFont
         val theme get() = INSTANCE.theme

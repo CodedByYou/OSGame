@@ -8,6 +8,7 @@ import com.lehaine.littlekt.graphics.g2d.font.BitmapFont
 import com.lehaine.littlekt.graphics.gl.ClearBufferMask
 import com.lehaine.littlekt.util.viewport.ExtendViewport
 import com.lehaine.littlekt.util.viewport.FitViewport
+import me.codedbyyou.os.client.resources.Assets
 import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.dialog.startDialog
 import kotlin.reflect.KClass
@@ -28,6 +29,7 @@ class MenuScene(
             this.startDialog(onSelection) {}
         }
     }
+    private var firstLoaded = false
 
     override suspend fun Context.show() {
         graph.initialize()
@@ -38,7 +40,10 @@ class MenuScene(
     override fun Context.render(dt: Duration) {
         gl.clear(ClearBufferMask.COLOR_BUFFER_BIT)
         gl.clear(ClearBufferMask.DEPTH_BUFFER_BIT)
-
+        if (!firstLoaded) {
+            firstLoaded = true
+            Assets.intro.play(Config.sfxMultiplier)
+        }
         graph.update(dt)
         graph.render()
     }

@@ -24,6 +24,7 @@ import me.codedbyyou.os.client.game.manager.ConnectionManager
 import me.codedbyyou.os.client.game.manager.TitleManager
 import me.codedbyyou.os.client.game.runtime.client.Client
 import me.codedbyyou.os.client.resources.Assets
+import me.codedbyyou.os.client.resources.Config
 import me.codedbyyou.os.client.ui.dialog.*
 import me.codedbyyou.os.client.ui.soundButton
 import me.codedbyyou.os.core.interfaces.server.PacketType
@@ -79,6 +80,7 @@ class GameScene(
                             leaderboard.enabled = false
                             leaderboard.visible = false
                             lastTwoThirds = -1.0
+                            Assets.gameStart.play(Config.sfxMultiplier)
                         }
                         PacketType.GAME_END -> {
                             leaderboard.enabled = true
@@ -125,7 +127,10 @@ class GameScene(
                             guessingButton.visible = true
                         }
                         PacketType.GAME_PLAYER_WIN ->{
-                            Assets.correct.play(1f);
+                            Assets.correct.play(Config.sfxMultiplier);
+                        }
+                        PacketType.GAME_PLAYER_LOSE ->{
+                            Assets.fail.play(Config.sfxMultiplier);
                         }
                         PacketType.GAME_ROUND_END -> {
                             gameStatus = "Round Ended"
