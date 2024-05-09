@@ -56,6 +56,7 @@ class GameRoom(
     private val roomChances = roomChancesCount
     override var roomPlayerCount: Int = roomPlayerCount
         get() = roomPlayers.size + spectators.size
+    private var lastTwoThirds = -1.0;
     /**
      * Checks if the room is full.
      */
@@ -171,7 +172,7 @@ class GameRoom(
                             PacketType.GAME_ROUND_START
                                 .toPacket(
                                     mapOf(
-                                        "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString(),
+                                        "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString()+":"+"-1",
                                     )
                                 )
                         )
@@ -234,13 +235,14 @@ class GameRoom(
         currentRound++
         val guesses = currentGuesses.values
         val average = guesses.sum() / guesses.size
-        val twoThirds = (average * 2) / 3
+        val twoThirds = (average * 2) / 3f
+        lastTwoThirds = twoThirds.toDouble()
         val closest = guesses.minByOrNull { abs(it - twoThirds) }!!
         val winners = currentGuesses.filter { it.value == closest }.keys
 
 
         Executors.newSingleThreadExecutor().execute {
-            val winnerJobs = winners.map { player ->
+             winners.map { player ->
                 Executors.newSingleThreadExecutor().execute {
                     player as GamePlayer
                     player.sendMessage("You have won the round")
@@ -255,7 +257,7 @@ class GameRoom(
                 }
             }
 
-            val loserJobs = (roomPlayers.toSet() - winners.toSet()).map { player ->
+            (roomPlayers.toSet() - winners.toSet()).map { player ->
                 Executors.newSingleThreadExecutor().execute {
                     player.sendMessage("You have lost the round")
                     player as GamePlayer
@@ -290,7 +292,7 @@ class GameRoom(
                             PacketType.GAME_ROUND_START
                                 .toPacket(
                                     mapOf(
-                                        "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString(),
+                                        "data" to currentRound.toString() + ":"+ roomPlayerChances.getOrDefault(player!!, 0).toString()+":"+lastTwoThirds.toString(),
                                     )
                                 )
                         )

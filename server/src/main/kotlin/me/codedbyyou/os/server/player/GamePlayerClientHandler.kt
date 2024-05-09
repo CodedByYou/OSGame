@@ -252,6 +252,8 @@ class GamePlayerClientHandler(private val socket: Socket) : Runnable {
                                                 }
                                             }
                                         }
+                                    } else {
+                                        player!!.addPacket(GAME_JOIN.toPacket())
                                     }
                                 }
 

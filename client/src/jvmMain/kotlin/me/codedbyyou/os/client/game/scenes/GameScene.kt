@@ -65,6 +65,7 @@ class GameScene(
     private var chancesLeftString = ""
     private var leadboardData = mutableListOf<Pair<String, String>>()
     private val loadLeaderboardSignal = Signal()
+    private var lastTwoThirds = -1.0
 
     init {
         KtScope.launch {
@@ -77,6 +78,7 @@ class GameScene(
                             gameStatus = "Game Started"
                             leaderboard.enabled = false
                             leaderboard.visible = false
+                            lastTwoThirds = -1.0
                         }
                         PacketType.GAME_END -> {
                             leaderboard.enabled = true
@@ -113,8 +115,11 @@ class GameScene(
                         }
                         PacketType.GAME_ROUND_START -> {
                             val data = packet.packetData["data"].toString().split(":")
+                            println(data)
                             val round = data[0]
                             val chances = data[1]
+                            println(data[2])
+                            lastTwoThirds = data[2].toDouble()
                             gameStatus = "Round $round"
                             chancesLeftString = "Chances Left: $chances"
                             guessingButton.enabled = true
@@ -347,7 +352,7 @@ class GameScene(
         graph.render()
 
         textureRect?.slice = Game.backgroundImage?.slice()
-        val roomNameAndCode = "Ask your friends to join Room: default#0"
+        val roomNameAndCode = if(lastTwoThirds == -1.0)  "Ask your friends to join Room: default#0" else "Two Thirds was $lastTwoThirds"
         val gameStatus = VectorFont.TextBlock(
             extendViewport.camera.virtualWidth/2f - this@GameScene.gameStatus.length*11.5f,
             40f, mutableListOf(VectorFont.Text(this@GameScene.gameStatus,48, Color.DARK_GRAY)))
