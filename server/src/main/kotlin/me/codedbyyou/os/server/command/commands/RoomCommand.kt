@@ -10,6 +10,7 @@ import me.codedbyyou.os.server.enums.impl.toGameRoomInfo
 import me.codedbyyou.os.server.player.GamePlayer
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import java.util.concurrent.Executors
+import java.util.concurrent.ThreadLocalRandom
 
 @Command("room", "r")
 @Description("A command to manage rooms and their settings.")
@@ -27,7 +28,7 @@ class RoomCommand : ICommand {
     @Description("Create a new room.")
    @Permission("room.create")
     @Usage("/room create <name> <minPlayers> <maxPlayers> <rounds> <chances>")
-    fun createRoom(player: GamePlayer, name: String, minPlayers: Int, maxPlayers: Int, rounds: Int, chances: Int) {
+    fun createRoom(player: CommandSender, name: String, minPlayers: Int, maxPlayers: Int, rounds: Int, chances: Int) {
         Server.gameManager.addRoom(
             name,
             "Game Room",
@@ -57,6 +58,14 @@ class RoomCommand : ICommand {
         }
 
     }
+    @SubCommand("generate", "g")
+    @Description("Create a new room.")
+    @Permission("room.create")
+    @Usage("/room generate <name>")
+    fun createDefaultRoom(player: CommandSender){
+        createRoom(player, "Room"+ThreadLocalRandom.current().nextInt(1000), 2, 4, 3, 5)
+    }
+
 
     @SubCommand("delete", "d")
     @Description("Delete a room.")
