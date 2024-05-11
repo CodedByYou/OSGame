@@ -20,7 +20,7 @@ The game was made using Kotlin, which runs on the Java Virtual Machine (JVM), ma
 2. Syncing multiple UI Packets to their Respective UI elements, this is a challenge as doing this normally results in issues and the game seemingly working or not working randomly, to solve this issue we used Kotlin channels, which provided a multi-threaded solution, ensuring smooth communication between UI packets and their corresponding UI elements.
 
 ## Issues
-1. Unstable GUI, likely due to us deciding to use LittleKT, a tool used to design and build Game Engines
+1. Unstable GUI, likely due to us deciding to use LittleKT with not much experience regarding it? or it is littlekt?, a tool used to design and build Game Engines
 
 ## Contributions
 
