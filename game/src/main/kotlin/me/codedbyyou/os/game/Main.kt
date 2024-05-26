@@ -184,7 +184,8 @@ fun main() {
                     width = windowWidth.dp,
                     height = windowHeight.dp
                 ),
-            )
+            ),
+            title = "OSGame Two Thirds V1.0"
         ) {
             App()
         }
