@@ -1,0 +1,6 @@
+ip:
+  0:
+    ip: "ssh.codedbyyou.com"
+    port: 13337
+    user: "root"
+    ticket: ""

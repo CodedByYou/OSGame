@@ -7,9 +7,12 @@ import me.codedbyyou.os.core.interfaces.server.PacketType
 import me.codedbyyou.os.core.interfaces.server.toPacket
 import me.codedbyyou.os.core.models.GameRoomInfo
 import me.codedbyyou.os.core.models.Title
+import me.codedbyyou.os.core.models.serialized
 import me.codedbyyou.os.server.Server
 import me.codedbyyou.os.server.enums.Game
+import me.codedbyyou.os.server.managers.GameRoomManager
 import me.codedbyyou.os.server.player.GamePlayer
+import me.codedbyyou.os.server.player.manager.PlayerManager
 import java.lang.Thread.sleep
 import java.util.concurrent.Executors
 import kotlin.math.abs
@@ -405,6 +408,22 @@ class GameRoom(
             roundWinners.clear()
             sleep(4000)
             roomStatus = RoomStatus.NOT_STARTED
+            PlayerManager.getOnlinePlayers().forEach {
+                Executors.newSingleThreadExecutor().execute {
+                    val games = Server.gameManager.getRooms()
+                        .map { it.toGameRoomInfo() }.serialized()
+                    if(Server.gameManager.getRoomByPlayer(it.uniqueName) == null){
+                        it as GamePlayer
+                        it.addPacket(
+                            PacketType.GAMES_LIST.toPacket(
+                               mapOf(
+                                   "games" to games
+                               )
+                            )
+                        )
+                    }
+                }
+            }
         }
 
     }

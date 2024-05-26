@@ -205,7 +205,7 @@ object Server : OSGameServer() {
      * @return A list of all online players
      * @see PlayerManager.getOnlinePlayers
      */
-    override fun getOnlinePlayers(): List<Player> = PlayerManager.getOnlinePlayers()
+    override fun getOnlinePlayers(): List<Player> {return PlayerManager.getOnlinePlayers()}
 
     /**
      * Get all offline players

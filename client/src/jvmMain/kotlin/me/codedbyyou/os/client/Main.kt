@@ -41,21 +41,13 @@ fun Server.ping(){
         socket.soTimeout = 1500
         val input = socket.getInputStream()
         val output = socket.getOutputStream()
-        logger.info("Connected to server "+ this.ip)
         PacketType.INFO_PING.sendPacket(output)
         val buffer = ByteArray(1024)
         logger.info("Pinging server for server information")
         val read = input.read(buffer)
-        logger.info("Received data from server")
         val data = String(buffer, 0, read)
-        logger.info("Received data: $data")
         val packet = Packet.fromPacket(data)
-        val packetType = packet.packetType
         val packetData = packet.packetData
-
-        logger.info("Received packet type: $packetType")
-        logger.info("Received packet data: $packetData")
-
         this.name = (packetData["ServerName"] ?: "Unknown").toString()
         this.description = (packetData["ServerDescription"] ?: "Unknown").toString()
         this.status = (packetData["ServerStatus"] ?: "Unknown").toString()

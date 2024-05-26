@@ -135,6 +135,7 @@ class GamePlayerClientHandler(private val socket: Socket) : Runnable {
                             // fire player leave event
                             // move logic to the event
                             PlayerManager.broadcastMessage("$nickname has left the server")
+                            break
                         }
 //                    PacketPrefix.PLAYER_INFO ->
                         ROOM_INFO -> {
@@ -281,7 +282,6 @@ class GamePlayerClientHandler(private val socket: Socket) : Runnable {
                         SERVER_PLAYER_LIST -> {
                             val players = PlayerManager.getOnlinePlayers()
                                 .map { it.uniqueName }
-
                             SERVER_PLAYER_LIST
                                 .toPacket(
                                     mapOf(
@@ -318,8 +318,14 @@ class GamePlayerClientHandler(private val socket: Socket) : Runnable {
                              * 2.a Server authenticates the client with the ticket at the same time
                              * 3. communication is now secure and known on server side
                              */
+                            println(
+                                packetData
+                            )
                             val pseudoName = packetData["pseudoName"] as String
                             val macAddress = packetData["machineId"] as String
+                            println(
+                                "Registering player $pseudoName with mac address $macAddress"
+                            )
                             logger.info("Registering player $pseudoName with mac address $macAddress")
                             try {
                                 synchronized(PlayerManager) {

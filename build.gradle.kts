@@ -7,6 +7,7 @@ plugins {
     kotlin("plugin.serialization") version "1.9.23" apply false
     kotlin("multiplatform") version "1.9.23" apply false
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
+    id("org.jetbrains.compose") version "1.6.1" apply false
 }
 
 group = "me.codedbyyou.os"
@@ -21,9 +22,26 @@ allprojects {
 
     repositories {
         mavenCentral()
+        google()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     }
 
 }
+
+//project(":compose") {
+//    apply(plugin = "org.jetbrains.compose")
+//    apply(plugin = "kotlin")
+//    tasks.withType<KotlinCompile> {
+//        kotlinOptions {
+//            jvmTarget = "18"
+//            freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
+//        }
+//    }
+//
+//    configure<JavaPluginExtension> {
+//        targetCompatibility = JavaVersion.VERSION_18
+//    }
+//}
 
 subprojects {
     apply(plugin = "java")
@@ -37,7 +55,11 @@ subprojects {
 //    }
 
     configure<JavaPluginExtension> {
-        targetCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = if (project.name != "compose") {
+            JavaVersion.VERSION_1_8
+        }else{
+            JavaVersion.VERSION_18
+        }
     }
 
     afterEvaluate{

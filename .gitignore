@@ -43,5 +43,21 @@ bin/
 ### Mac OS ###
 .DS_Store
 .idea/misc.xml
-.idea/misc.xml
 *.xml
+
+
+.kotlin
+**/build/
+xcuserdata
+!src/**/build/
+local.properties
+.idea
+captures
+.externalNativeBuild
+.cxx
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
