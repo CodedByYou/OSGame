@@ -1,6 +1,7 @@
 package me.codedbyyou.os.server.command.commands
 
 import me.codedbyyou.os.server.command.annotations.*
+import me.codedbyyou.os.server.command.interfaces.CommandSender
 import me.codedbyyou.os.server.command.interfaces.ICommand
 import me.codedbyyou.os.server.command.interfaces.impl.ConsoleCommandSender
 import me.codedbyyou.os.server.player.GamePlayer
@@ -9,7 +10,7 @@ import me.codedbyyou.os.server.player.GamePlayer
 /**
  * Simple Example of Command System
  */
-@Command("math", "m")
+@Command("math", "m","mathematics")
 @Description("A command to perform math operations.")
 class MathCommand : ICommand {
 
@@ -24,7 +25,7 @@ class MathCommand : ICommand {
     @Usage("/math multiply <a> <b>")
     @SubCommand("multiply", "mul", "m")
     @Description("Multiply two numbers.")
-    fun multiply(player: GamePlayer, a: Int, b: Int) {
+    fun multiply(player: CommandSender, a: Int, b: Int) {
         player.sendMessage("Multiplying $a * $b")
         player.sendMessage("Result: ${a * b}")
     }

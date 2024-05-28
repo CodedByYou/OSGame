@@ -13,6 +13,7 @@ import me.codedbyyou.os.server.player.GamePlayer
 import me.codedbyyou.os.server.player.manager.PlayerManager
 import me.codedbyyou.os.server.player.GamePlayerClientHandler
 import me.codedbyyou.os.server.player.listeners.PlayerEventListener
+import java.io.File
 import java.lang.Thread.sleep
 import java.net.ServerSocket
 import java.util.Scanner
@@ -42,6 +43,7 @@ object Server : OSGameServer() {
     private var socketServer: ServerSocket? = null
     private var heartBeat = false
     private val playerThreadExecutorPool = Executors.newFixedThreadPool(serverMaxPlayers)
+    private val pluginsDirectory = File("plugins")
     val lastPinged = mutableMapOf<String, Long>()
     val consoleCommandSender = ConsoleCommandSender()
 
@@ -54,7 +56,9 @@ object Server : OSGameServer() {
         CommandManager
         initEvents()
         status = ServerStatus.STARTING
-
+        if (!pluginsDirectory.exists()) {
+            pluginsDirectory.mkdir()
+        }
         if (isFirstRun) {
             logger.info("Config file created")
             logger.info("Please fill the config file with the server information and restart the server.")
@@ -142,7 +146,7 @@ object Server : OSGameServer() {
       **/
     fun loadPlayerProfiles() {
         val playersSection = config.getSection("players")
-        playersSection.keys.forEach { key ->
+        playersSection?.keys?.forEach { key ->
             val macAddress = key.toString()
             val nickTicket = playersSection.getString(macAddress)
             val nickname = nickTicket.split("#")[0]

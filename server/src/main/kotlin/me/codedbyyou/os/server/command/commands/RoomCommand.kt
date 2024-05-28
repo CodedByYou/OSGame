@@ -26,7 +26,7 @@ class RoomCommand : ICommand {
 
     @SubCommand("create", "c")
     @Description("Create a new room.")
-   @Permission("room.create")
+    @Permission("room.create")
     @Usage("/room create <name> <minPlayers> <maxPlayers> <rounds> <chances>")
     fun createRoom(player: CommandSender, name: String, minPlayers: Int, maxPlayers: Int, rounds: Int, chances: Int) {
         Server.gameManager.addRoom(

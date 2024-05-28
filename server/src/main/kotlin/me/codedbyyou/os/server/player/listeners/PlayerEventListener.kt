@@ -26,6 +26,7 @@ class PlayerEventListener : EventListener {
         }
         Server.broadcast(message)
     }
+
     fun onPlayerLosing(event : PlayerLoseEvent) {
         val message = when (event.loseType) {
             WinLoseType.ROUND -> "Player ${event.player.uniqueName} has lost the round"

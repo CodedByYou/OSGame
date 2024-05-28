@@ -4,3 +4,4 @@ server:
   port: 13337
   description: "This is my server"
   max_players: 10
+playersSection:
